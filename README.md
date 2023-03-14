@@ -20,15 +20,15 @@ These methods, by default, cannot model the exponential distance decay of HiChIP
 
 DiffHiChIP is the first comprehensive framework to assess these differential HiChIP loop calling models. 
 
-	1. It incorporates both DESeq2 and edgeR with false discovery rate (FDR) and independent hypothesis weighting (IHW) corrected p-values. 
+1. It incorporates both DESeq2 and edgeR with false discovery rate (FDR) and [independent hypothesis weighting (IHW)](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) corrected p-values. 
 
-	2. Implements stratification by equal-occupancy binning (similar contacts per bin) to assign higher statistical power to long-range loops.
+2. Implements stratification by equal-occupancy binning (similar contacts per bin) to assign higher statistical power to long-range loops.
 
-	3. DiffHiChIP further incorporates edgeR with generalized linear model (GLM), and defines four additional models employing either of quasi-likelihood F-test, likelihood ratio test, or fold-change specific thresholds (TREAT).
+3. DiffHiChIP further incorporates edgeR with generalized linear model (GLM), and defines four additional models employing either of quasi-likelihood F-test, likelihood ratio test, or fold-change specific thresholds (TREAT).
 
-		3a. The GLM-based models show higher precision in recovering short and long-range differential contacts, which are highly supported by the respective Hi-C backgrounds.
+	3a. The GLM-based models show higher precision in recovering short and long-range differential contacts, which are highly supported by the respective Hi-C backgrounds.
 
-	4. DiffHiChIP further categorizes differential loops by the underlying ChIP-seq differences of the interacting bins, and the significance of loops in individual samples.
+4. DiffHiChIP further categorizes differential loops by the underlying ChIP-seq differences of the interacting bins, and the significance of loops in individual samples.
 
 
 Installation
@@ -36,26 +36,25 @@ Installation
 
 To execute DiffHiChIP, user needs to install the following environments and packages:
 
-	1. R (we have used R version 4.1.0)
+1. R (we have used R version 4.1.0)
 
-	2. Following R libraries need to be installed:
+2. Following R libraries need to be installed:
 
-		optparse, data.table, GenomicRanges, DESeq2, edgeR, dplyr, ggplot2, IHW, ashr, BiocParallel, parallel
+	optparse, data.table, GenomicRanges, DESeq2, edgeR, dplyr, ggplot2, IHW, ashr, BiocParallel, parallel
 
-	3. If user needs to perform loop calling on HiChIP data first, we recommed using FitHiChIP for HiChIP loop calling. Please check the [manuscript](https://www.nature.com/articles/s41467-019-11950-y) and [GitHub page](https://github.com/ay-lab/FitHiChIP) and a step by step [documentation](https://ay-lab.github.io/FitHiChIP/html/index.html) of FitHiChIP to execute it.
-
+3. If user needs to perform loop calling on HiChIP data first, we recommed using FitHiChIP for HiChIP loop calling. Please check the [manuscript](https://www.nature.com/articles/s41467-019-11950-y) and [GitHub page](https://github.com/ay-lab/FitHiChIP) and a step by step [documentation](https://ay-lab.github.io/FitHiChIP/html/index.html) of FitHiChIP to execute it.
 
 
 Execution
 ==========
 
-	1. User first needs to edit the text file *scripts/CD4N_vs_CD8N_InputTable.txt* (user can edit the file name as well) which contains the paths and categories of the input samples (HiChIP loop files).
+1. User first needs to edit the text file *scripts/CD4N_vs_CD8N_InputTable.txt* (user can edit the file name as well) which contains the paths and categories of the input samples (HiChIP loop files).
 
-		**Note** The FitHiChIP loops should be the set of all possible contacts along with their statistical significance values, not only the significant contacts. In FitHiChIP, the file names are *PREFIX*.interactions_FitHiC.bed (check the [documentation](https://ay-lab.github.io/FitHiChIP/html/usage/output.html) for details).
+**Note** The FitHiChIP loops should be the set of all possible contacts along with their statistical significance values, not only the significant contacts. In FitHiChIP, the file names are *PREFIX*.interactions_FitHiC.bed (check the [documentation](https://ay-lab.github.io/FitHiChIP/html/usage/output.html) for details).
 
-	2. Then check the file *scripts_DiffLoop_CD4N_vs_CD8N.sh* (user can edit the file name as well) and edit the file paths and other configuration parameters. Then run *qsub scripts_DiffLoop_CD4N_vs_CD8N.sh* to execute the job.
+2. Then check the file *scripts_DiffLoop_CD4N_vs_CD8N.sh* (user can edit the file name as well) and edit the file paths and other configuration parameters. Then run *qsub scripts_DiffLoop_CD4N_vs_CD8N.sh* to execute the job.
 
-		**Note** The chromosome size file needs to be provided according to the reference genome employed.
+**Note** The chromosome size file needs to be provided according to the reference genome employed.
 
 
 Configuration parameters
@@ -68,9 +67,9 @@ The script basically invokes the main source code *src/DiffLoop_Code_FitHiChIP.r
 Usage: DiffLoop_Code_FitHiChIP.r [options]
 
 Options:
+	
 	--AllLoopList=ALLLOOPLIST
 		Comma or colon separated list of loop files of all categories and all replicates. Loop files without any FDR thresholding (i.e. having all loops) should be provided. For example, considering FitHiChIP, files $PREFIX$*.interactions.FitHiC.bed should be provided. Loop files for the first category are to be mentioned first, followed by those of second category. For example, suppose there are two replicates for each category. Then, the file list would be like Cat1_Repl1_File:Cat1_Repl2_File:Cat2_Repl1_File:Cat2_Repl2_File where, Cat1 denotes input category 1, and Repl1 means replicate 1, and so on. Loop files can be gzipped as well. All the loops in all files should have equal resolution (bin size). Mandatory parameter.
-
 
 	--ChrSizeFile=CHRSIZEFILE
 		File containing size of chromosomes for reference genome. Mandatory parameter.
@@ -147,61 +146,67 @@ Output description
 
 Within the mentioned output directory **OUTDIR**, the output differential loops are stored in the following directory structure, depending on the input parameters:
 
-$${\color{blue}BACKGROUND}$$/$${\color{blue}STRAT}$$/$${\color{green}MODEL}$$/$${\color{brown}FDRTYPE}$$/**DiffLoops_ALL.bed**
+$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops_ALL.bed**$$
 
 Details of the directory structure:
 
-$${\color{blue}BACKGROUND}$$: Denotes the background set of contacts employed for differential loop calling.
+$${\color{blue}BACKGROUND}$$: 
+
+Denotes the background set of contacts employed for differential loop calling.
 
 	1. If --PreFilt=0 (default), the directory name is *Background_AllContacts*. 
 
 	2. Otherwise, the folder name is *Background_FilteredContacts*.
 
-$${\color{blue}STRAT}$$: Denotes whether distance stratification is employed or not.
+$${\color{blue}STRAT}$$: 
+
+Denotes whether distance stratification is employed or not.
 
 	1. If --DiffModel=0, no distance stratification is employed. The folder name is *DiffModel_0_AllLoops*. 
 
 	2. Otherwise, for distance stratification (--DiffModel=1), the directory name is *DiffModel_1_DistStrat_{DSBINSIZE}* where *DSBINSIZE* is the bin size employed for stratification (see the parameter --DSBinSize)
 
-$${\color{green}MODEL}$$: Specifies the differential analysis model.
+$${\color{green}MODEL}$$: 
 
-	1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
+Specifies the differential analysis model.
 
-	2. Otherwise, edgeR is employed for differential loop finding.
+1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
 
-		2a. --EdgeRModel=0 - directory: *EdgeR_exactTest*
+2. Otherwise, edgeR is employed for differential loop finding.
 
-		2b. --EdgeRModel=1 - directory: *EdgeR_glmQLFTest*
+	2a. --EdgeRModel=0 - directory: *EdgeR_exactTest*
 
-		2c. --EdgeRModel=2 - directory: *EdgeR_glmTreatQL*
+	2b. --EdgeRModel=1 - directory: *EdgeR_glmQLFTest*
 
-		2d. --EdgeRModel=3 - directory: *EdgeR_glmLRT*
+	2c. --EdgeRModel=2 - directory: *EdgeR_glmTreatQL*
 
-		2e. --EdgeRModel=4 - directory: *EdgeR_glmTreat*
+	2d. --EdgeRModel=3 - directory: *EdgeR_glmLRT*
 
-		**Note** The --EdgeRModel=0 setting is the default. --EdgeRModel 1 to 4 values are only applicable when both input categories have multiple replicates.
+	2e. --EdgeRModel=4 - directory: *EdgeR_glmTreat*
 
-$${\color{brown}FDRTYPE}$$: Denotes the FDR (q-value) derivation method.
+	**Note** The --EdgeRModel=0 setting is the default. --EdgeRModel 1 to 4 values are only applicable when both input categories have multiple replicates.
 
-	1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
+$${\color{brown}FDRTYPE}$$: 
 
-	2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
+Denotes the FDR (q-value) derivation method.
 
+1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
+
+2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
 
 **Note:**
 
-	1. The **DiffLoops_ALL.bed** file within this directory structure stores the significant differential loops.
+1. The **DiffLoops_ALL.bed** file within this directory structure stores the significant differential loops.
 
-	2. The WashU browser compatible files for these differential loops are stored in the same directory, by the names **DiffLoops_ALL_WashU.bed.gz** and **DiffLoops_ALL_WashU.bed.gz.tbi**.
+2. The WashU browser compatible files for these differential loops are stored in the same directory, by the names **DiffLoops_ALL_WashU.bed.gz** and **DiffLoops_ALL_WashU.bed.gz.tbi**.
 
 
 Utility scripts
 ================
 
-1. utils/Creates_json_files.R
-==============================
+**1. utils/Creates_json_files.R**
 
-Execution of the above mentioned differential analysis script creates lots of differential loop files, which need to be visualized in a genome browser (like WashU epigenome browser) for visualization and comparison between different settings.
+Execution of the above mentioned differential analysis script creates lots of differential loop files, which need to be visualized in a genome browser (like [WashU epigenome browser](https://epigenomegateway.wustl.edu/)) for visualization and comparison between different settings.
 
 User can check this script and edit the parameters (lines 10 - 90) according to the differential analysis scripts and execution paths.
 
