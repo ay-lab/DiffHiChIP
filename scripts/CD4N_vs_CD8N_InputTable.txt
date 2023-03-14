@@ -1,1 +1,5 @@
-
+Files	Condition
+/home/sourya/results/DiffHiChIP/fithichip_loops/CD4N_Sample1/fithichip_loops_all.bed	CD4N
+/home/sourya/results/DiffHiChIP/fithichip_loops/CD4N_Sample2/fithichip_loops_all.bed	CD4N
+/home/sourya/results/DiffHiChIP/fithichip_loops/CD8N_Sample1/fithichip_loops_all.bed	CD8N
+/home/sourya/results/DiffHiChIP/fithichip_loops/CD8N_Sample2/fithichip_loops_all.bed	CD8N
