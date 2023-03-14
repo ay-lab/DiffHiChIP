@@ -146,11 +146,11 @@ Output description
 
 Within the mentioned output directory **OUTDIR**, the output differential loops are stored in the following directory structure, depending on the input parameters:
 
-$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops_ALL.bed**$$
+$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops\_ALL.bed**$$
 
 Details of the directory structure:
 
-$${\color{blue}BACKGROUND}$$: 
+$${\color{blue}BACKGROUND}$$ 
 
 Denotes the background set of contacts employed for differential loop calling.
 
@@ -158,7 +158,7 @@ Denotes the background set of contacts employed for differential loop calling.
 
 	2. Otherwise, the folder name is *Background_FilteredContacts*.
 
-$${\color{blue}STRAT}$$: 
+$${\color{blue}STRAT}$$ 
 
 Denotes whether distance stratification is employed or not.
 
@@ -166,33 +166,33 @@ Denotes whether distance stratification is employed or not.
 
 	2. Otherwise, for distance stratification (--DiffModel=1), the directory name is *DiffModel_1_DistStrat_{DSBINSIZE}* where *DSBINSIZE* is the bin size employed for stratification (see the parameter --DSBinSize)
 
-$${\color{green}MODEL}$$: 
+$${\color{green}MODEL}$$ 
 
 Specifies the differential analysis model.
 
-1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
+	1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
 
-2. Otherwise, edgeR is employed for differential loop finding.
+	2. Otherwise, edgeR is employed for differential loop finding.
 
-	2a. --EdgeRModel=0 - directory: *EdgeR_exactTest*
+		2a. --EdgeRModel=0 - directory: *EdgeR_exactTest*
 
-	2b. --EdgeRModel=1 - directory: *EdgeR_glmQLFTest*
+		2b. --EdgeRModel=1 - directory: *EdgeR_glmQLFTest*
 
-	2c. --EdgeRModel=2 - directory: *EdgeR_glmTreatQL*
+		2c. --EdgeRModel=2 - directory: *EdgeR_glmTreatQL*
 
-	2d. --EdgeRModel=3 - directory: *EdgeR_glmLRT*
+		2d. --EdgeRModel=3 - directory: *EdgeR_glmLRT*
 
-	2e. --EdgeRModel=4 - directory: *EdgeR_glmTreat*
+		2e. --EdgeRModel=4 - directory: *EdgeR_glmTreat*
 
 	**Note** The --EdgeRModel=0 setting is the default. --EdgeRModel 1 to 4 values are only applicable when both input categories have multiple replicates.
 
-$${\color{brown}FDRTYPE}$$: 
+$${\color{brown}FDRTYPE}$$ 
 
 Denotes the FDR (q-value) derivation method.
 
-1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
+	1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
 
-2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
+	2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
 
 **Note:**
 
