@@ -150,25 +150,19 @@ ${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown
 
 Details of the directory structure:
 
-$${\color{blue}BACKGROUND}$$ 
-
-Denotes the background set of contacts employed for differential loop calling.
+{\color{blue}BACKGROUND}$: Denotes the background set of contacts employed for differential loop calling.
 
 	1. If --PreFilt=0 (default), the directory name is *Background_AllContacts*. 
 
 	2. Otherwise, the folder name is *Background_FilteredContacts*.
 
-$${\color{blue}STRAT}$$ 
-
-Denotes whether distance stratification is employed or not.
+{\color{blue}STRAT}$: Denotes whether distance stratification is employed or not.
 
 	1. If --DiffModel=0, no distance stratification is employed. The folder name is *DiffModel_0_AllLoops*. 
 
 	2. Otherwise, for distance stratification (--DiffModel=1), the directory name is *DiffModel_1_DistStrat_{DSBINSIZE}* where *DSBINSIZE* is the bin size employed for stratification (see the parameter --DSBinSize)
 
-$${\color{green}MODEL}$$ 
-
-Specifies the differential analysis model.
+{\color{green}MODEL}$: Specifies the differential analysis model.
 
 	1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
 
@@ -186,9 +180,7 @@ Specifies the differential analysis model.
 
 	**Note** The --EdgeRModel=0 setting is the default. --EdgeRModel 1 to 4 values are only applicable when both input categories have multiple replicates.
 
-$${\color{brown}FDRTYPE}$$ 
-
-Denotes the FDR (q-value) derivation method.
+{\color{brown}FDRTYPE}$: Denotes the FDR (q-value) derivation method.
 
 	1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
 
