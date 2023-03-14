@@ -146,7 +146,7 @@ Output description
 
 Within the mentioned output directory **OUTDIR**, the output differential loops are stored in the following directory structure, depending on the input parameters:
 
-$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops\_ALL.bed**$$
+$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops{\_}ALL.bed**$$
 
 Details of the directory structure:
 
