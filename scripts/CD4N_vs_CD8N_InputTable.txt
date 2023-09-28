@@ -1,5 +1,13 @@
 Files	Condition
-/home/sourya/results/DiffHiChIP/fithichip_loops/CD4N_Sample1/fithichip_loops_all.bed	CD4N
-/home/sourya/results/DiffHiChIP/fithichip_loops/CD4N_Sample2/fithichip_loops_all.bed	CD4N
-/home/sourya/results/DiffHiChIP/fithichip_loops/CD8N_Sample1/fithichip_loops_all.bed	CD8N
-/home/sourya/results/DiffHiChIP/fithichip_loops/CD8N_Sample2/fithichip_loops_all.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1800-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1814-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1815-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1816-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1829-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD4N/1831-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD4N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1800-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1814-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1815-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1816-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1829-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N
+/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/fithichip/CD8N/1831-RH-1/L5/FitHiChIP_Peak2ALL_b5000_L20000_U2000000/P2PBckgr_0/Coverage_Bias/FitHiC_BiasCorr/FitHiChIP-L5.interactions_FitHiC.bed	CD8N

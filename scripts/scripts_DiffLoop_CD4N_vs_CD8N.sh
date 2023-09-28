@@ -1,83 +1,39 @@
-#!/bin/bash -ex
-#PBS -l nodes=1:ppn=1
-#PBS -l mem=200GB
-#PBS -l walltime=80:00:00
-#PBS -m ae
-#PBS -j eo
-#PBS -V
-#source ~/.bashrc
-#source ~/.bash_profile
-hostname
-TMPDIR=/scratch
-cd $PBS_O_WORKDIR
+#!/bin/bash
+#SBATCH -t 80:00:00
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH --mem-per-cpu=150G
+# source ~/.bashrc
+source ~/.bash_profile
 
-CodeDir='/home/sourya/Projects/DiffHiChIP/src'
+conda activate BASIC_R_PYTHON
+
+CodeDir='/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/src'
+cd $CodeDir
 
 CodeExec=$CodeDir'/DiffLoop_Code_FitHiChIP.R'
 
-InpTableFile='/home/sourya/Projects/DiffHiChIP/scripts/CD4N_vs_CD8N_InputTable.txt'
+InpTableFile='/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/scripts/CD4N_vs_CD8N_InputTable.txt'
 
-ChrSizeFile='/home/sourya/genomes/chrsize/hg38.chrom.sizes'
+ChrSizeFile='/mnt/BioAdHoc/Groups/vd-vijay/sourya/genomes/chrsize/hg38_mod.chrom.sizes'
 
-OutDir='/home/sourya/results/DiffHiChIP/DiffLoop_CD4N_vs_CD8N'
+OutDir='/mnt/bioadhoc-temp/Groups/vd-ay/sourya/Projects/2022_DiffHiChIP/Results/DiffLoop_CD4N_vs_CD8N_NEW'
 mkdir -p $OutDir
 
-##========================
-## using All the loops as background - basically contacts present (significant or not) in at least one sample 
-##========================
-cd $CodeDir
-
-##===================
-## DESeq2 on the complete set of loops (model 0)
-## recommended - lists both traditional FDR and FDR with IHW correction
-##===================
-Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --DiffModel 0 --UseDESeq2 1
-
-##===================
-## DESeq2 on the complete set of loops (model 0) with pre-filtered background
-## lists both traditional FDR and FDR with IHW correction
-##===================
- Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --PreFilt 1 --DiffModel 0 --UseDESeq2 1 
-
-##===================
-## DESeq2 using distance stratification
-##===================
-Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --DiffModel 1 --UseDESeq2 1 
-
-##===================
-## DESeq2 using distance stratification with pre-filtered background
-##===================
-Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --PreFilt 1 --DiffModel 1 --UseDESeq2 1
-
-##===================
-## edgeR on the complete set of loops (model 0)
-## recommended - lists both traditional FDR and FDR with IHW correction
-##===================
-for edgermodel in 0 1 2 3 4; do
-	Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --DiffModel 0 --UseDESeq2 0 --EdgeRModel $edgermodel
+for PreFilt in 0 1; do
+    # for DistStrat in 0 1; do
+    for DistStrat in 1; do
+        for Model in 0 1 2 3; do
+            Rscript $CodeExec \
+                --InpTable $InpTableFile \
+                --OutDir ${OutDir} \
+                --ChrSizeFile ${ChrSizeFile} \
+                --FDRThr 0.01 \
+                --Model $Model \
+                --PreFilt $PreFilt \
+                --DistStrat $DistStrat
+        done
+    done
 done
-
-##===================
-## edgeR on the complete set of loops (model 0) with pre-filtered background
-## lists both traditional FDR and FDR with IHW correction
-##===================
-for edgermodel in 0 1 2 3 4; do
-	Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --PreFilt 1 --DiffModel 0 --UseDESeq2 0 --EdgeRModel $edgermodel
-done
-
-##===================
-## edgeR using distance stratification
-##===================
-for edgermodel in 0 1 2 3 4; do 
-	Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --DiffModel 1 --UseDESeq2 0 --EdgeRModel $edgermodel
-done
-
-##===================
-## edgeR using distance stratification with pre-filtered background
-##===================
-for edgermodel in 0 1 2 3 4; do
-	Rscript $CodeExec --InpTable $InpTableFile --ChrSizeFile ${ChrSizeFile} --OutDir ${OutDir} --FDRThr 0.01 --PreFilt 1 --DiffModel 1 --UseDESeq2 0 --EdgeRModel $edgermodel
-done
-
 
 
