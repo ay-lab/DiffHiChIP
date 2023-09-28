@@ -42,7 +42,12 @@ DEFAULT_FDR_COL_ARG <- -1
 ## default FDR threshold for FitHiChIP loops
 DEFAULT_FDR_LOOP <- 0.01
 
-## Applicable only for HiChIP data processing. 
+## default FDR thresold of filtering FitHiChIP loops for filtered background
+## in FitHiChIP we used 0.01
+## here, based on the recommendation of HiCDC+, we use 0.1
+DEFAULT_FDR_LOOP_FILT_BCK <- 0.1
+
+## Applicable only for HiChIP data processing.
 ## Threshold signifying the max allowed deviation of ChIP coverage between two categories, 
 ## to consider those bins as 1D invariant (ND).
 DEFAULT_CHIP_COVERAGE_THR <- 0.25

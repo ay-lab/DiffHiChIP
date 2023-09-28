@@ -9,51 +9,173 @@
 source("Header.R")
 source("Functions.R")
 
-option_list = list(
+option_list <- list(
 
-	make_option(c("--InpTable"), type="character", default=NULL, help="File containing input loops and covariate information. Default = NULL. Mandatory parameter."),
+	make_option("--InpTable",
+				type = "character", 
+				default = NULL, 
+				help = "Input table file with loop file, covariate information. Default = NULL. Mandatory parameter."),
 
-	make_option(c("--ChrSizeFile"), type="character", default=NULL, help="File containing size of chromosomes for reference genome. Mandatory parameter."),
+	make_option("--OutDir", 
+				type = "character", 
+				default = NULL, 
+				help = "Base Output directory. Mandatory parameter."),
 
-	make_option(c("--MidList"), type="character", default=NULL, help="Boolean values (0/1) where 1 means midpoints of each bin are specified, rather than the bin interval. If a single value is provided, all of the input files are assumed to have the same property. Otherwise, if different input files have different configuration, user needs to specify a Comma or colon separated list of boolean values. The list should have equal length as the --AllLoopList parameter, and order of input files should be similar as --AllLoopList parameter. Default: list of all zeroes (means bin interval is provided for all the files)."),
+	make_option("--ChrSizeFile", 
+				type = "character", 
+				default = NULL, 
+				help = "Chromosome size file corresponding to reference genome. Mandatory parameter."),
 
-	make_option(c("--BinSize"), type="integer", action="store", default=0, help="Applicable if all the entries in --MidList option is 1, that is all input files contain only midpoints. In such a case, user needs to specify the bin size of input loops. Mandatory parameter in such a case. Default = 0"),	
+	make_option("--MidList", 
+				type="character", 
+				default=NULL, 
+				help="Comma or colon separated list of boolean values (0/1) corresponding to the input loop files. 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						1: loop file has midpoints of each bin 
+						0: loop file has bin interval (chr, start, end). 
+						Instead of a list, a single value (0 or 1) can also be provided. 
+						In such a case, all files will be assumed to have the same configuration. 
+						Default: list of all zeroes (means all loop files have bin interval information)."),
 
-	make_option(c("--CCColList"), type="character", default=NULL, help="Comma or colon separated list of integers depicting the column numbers of individual input files, which contain the raw contact counts. If all the input files have similar settings, user may just specify one number, which will be applied to all the files. Default = 7, same as FitHiChIP output format."),
+	make_option("--BinSize", 
+				type="integer", 
+				action="store", 
+				default=5000, 
+				help="Bin size / resolution of the input loops. 
+					Used only if all the entries in --MidList option is 1, thus all loop files contain only midpoints of the bin intervals. Mandatory parameter in such a case. Default = 5000 means 5 Kb."),	
 
-	make_option(c("--QColList"), type="character", default=NULL, help="Comma or colon separated list of integers depicting the column numbers of individual input files, which contain the q-value (FDR). If all the input files have similar settings, user may just specify one number, which will be applied to all the files. Default is the last column for all the input loops, same as FitHiChIP output format."),
+	make_option("--CCColList", 
+				type="character", 
+				default=NULL, 
+				help="Comma or colon separated list of integers depicting the column numbers of the input loop files storing the raw contact count information. 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						If all the input files have similar settings, user can specify only one value.
+						Default = 7, same as FitHiChIP output format."),
 
-	make_option(c("--FDRThr"), type="character", default=NULL, help="FDR (q-value) threshold used for determining HiC or HiChIP significant loops. Default = 0.01."),	
+	make_option("--QColList", 
+				type="character", 
+				default=NULL, 
+				help="Comma or colon separated list of integers depicting the column numbers of the input loop files storing the q-value (FDR) information. 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						If all the input files have similar settings, user can specify only one value.
+						Default is the last column, same as FitHiChIP output format."),
 
-	make_option(c("--OutDir"), type="character", default=NULL, help="Base Output directory. Mandatory parameter."),
-
-	#==================
-	# HiChIP related parameters
-	make_option(c("--ChIPAlignFileList"), type="character", default=NULL, help="Applicable only for HiChIP data processing. Comma or colon separated list of ChIP-seq alignment files. Either BAM or bedgraph formatted file is supported. Default is NULL. User can 1) either provide two files, one for each category, 2) or provide ChIP seq alignment files one for each sample. If this parameter is empty, HiC like processing is performed."),
-
-	make_option(c("--CovThr"), type="character", default=NULL, help="Applicable only for HiChIP data processing. Threshold signifying the max allowed deviation of ChIP coverage between two categories, to consider those bins as 1D invariant (ND). Default (or if user specifies value <=0 or > 100) is 25, means 25% deviation is set as maximum. If user chooses 50, 50% maximum ChIP seq coverage deviation would be allowed."),
+	make_option("--FDRThr", 
+				type="numeric", 
+				action="store", 
+				default=0.01, 
+				help="FDR (q-value) threshold used for determining Hi-C or HiChIP significant loops. Default = 0.01."),	
 
 	#==================
 	# differential analysis and package related parameters
-	make_option(c("--DiffModel"), type="integer", action="store", default=0, help="Differential loop model. Possible values are: [0]: Use complete set of loops, and report FDR and IHW corrected FDR. [1]: Use distance stratification (equal occupancy binning, based on the bin size specified). Default = 0."),
 
-	make_option(c("--DSBinSize"), type="integer", action="store", default=10000, help="Applicable if the parameter --DiffModel is 1. Specifies the bin size (in bytes) employed for stratification. Default = 10000 means 10 Kb is the equal occupancy bin size."),
+	make_option("--Model", 
+				type="integer", 
+				action="store", 
+				default=4, 
+				help="Differential analysis model.
+						0: DESeq2
+						1: edgeR exact Test
+						2: edgeR GLM with likelihood ratio tests (glmFit + glmLRT)
+						3: edgeR GLM with Quasi-likelihood (QL) F-Test (glmQLFit + glmQLFTest)
+						4: Wilcoxon rank sum test on edgeR TMM normalized count
+						Default = 1
+						** Note: Models 0, 2, 3, are applicable if both categories have > 1 replicates."),
 
-	make_option(c("--UseDESeq2"), type="integer", action="store", default=0, help="If specified 1, uses DESeq2 to find the differential loops, provided that the input data has replicates in both categories. Default = 0, means edgeR is used to find the differential loops."),
+	make_option("--PreFilt", 
+				type="integer", 
+				action="store", 
+				default=0, 
+				help="Binary value. 
+						0: all FitHiChIP loops from all samples are used as background.
+						1: Union of loops having FitHiChIP FDR < 0.1 in at least one input sample are used as background. 
+						Default = 0, means no filtering is done."),
 
-	make_option(c("--EdgeRModel"), type="integer", action="store", default=0, help="The exact statistical model to be employed for EdgeR (if used). Values are: [0] - exact Test, [1] - Quasi-likelihood (QL) F-Test (glmQLFit + glmQLFTest), [2] - (glmQLFit + glmTreat - same as option 1 but here genes with logFC > 1 will be considered), [3] - likelihood ratio tests (glmFit + glmLRT), [4] - (glmFit + glmTreat - same as option 3 but here genes with logFC > 1 will be considered). Default = 0. *** Note: values 1 to 4 are applicable only when both input categories have multiple replicates."),
+  	make_option("--DiffFDRThr", 
+				type="numeric", 
+				action="store", 
+				default=0.05, 
+				help="FDR threshold for differential loops. Default = 0.05"),
 
-	make_option(c("--PreFilt"), type="integer", action="store", default=0, help="If 1, pre-filtered loops are used as background. By default, we denote pre-filtered loops as those having FitHiChIP q-value < 0.1 in at least one input sample. If this option is set to 0 (default), no such pre-filtering is done. Default = 0."),
+	make_option("--LFCThr", 
+				type="numeric", 
+				action="store", 
+				default=1, 
+				help="log2 fold change threshold for differential loops. Default = 1."),
 
-  	make_option(c("--DiffFDRThr"), type="character", default=NULL, help="FDR threshold for DESeq / EdgeR. Default is 0.05, means that loops with FDR < 0.05, and fold change >= log2(FoldChangeThr) would be considered as differential."),
+	make_option("--DistStrat", 
+				type="integer", 
+				action="store", 
+				default=0, 
+				help="Binary value. Possible values are: 
+				[0]: No distance stratification. Use FDR and IHW corrected FDR for differential analysis.
+				[1]: Use distance stratification (equal occupancy binning) and FDR. 
+				Default = 0, means no distance stratification is employed."),
 
-	make_option(c("--LFCThr"), type="character", default=NULL, help="DESeq / EdgeR log2 fold change threshold. Default = 1."),
+	make_option("--DSBinSize", 
+				type="integer", 
+				action="store", 
+				default=10000, 
+				help="Applicable if the parameter --DistStrat is 1. 
+						Specifies the bin size (in bytes) employed for stratification. 
+						Default = 10000 means 10 Kb is the equal occupancy bin size."),
 
-  	make_option(c("--bcv"), type="character", default=NULL, help="If EdgeR is used with single samples (replica count = 1 for any of the categories), this value is the square-root-dispersion. For datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms, or 0.01 for technical replicates. For details, see the edgeR manual. By default, the value is set as 0.4."),
+  	make_option("--bcv", 
+				type="numeric", 
+				action="store", 
+				default=0.4, 
+				help="If edgeR is used with one replicate in at least one input category, this value is the square-root-dispersion. 
+					For datasets arising from well-controlled experiments are 0.4 for human data, 
+					0.1 for data on genetically identical model organisms, 
+					or 0.01 for technical replicates. 
+					For details, see the edgeR manual. 
+					By default, the value is set as 0.4."),
 
-  	make_option(c("--SuffixStr"), type="character", default=NULL, help="This suffix string can be used to denote specific input conditions, like DESeq2 with extra covariate. If --Overwrite is 0, using different values for this parameter helps user to run DESeq2 / EdgeR for different conditions without re-computing the input datasets. Default = NULL."),
+	#==================
+	# HiChIP related parameters
+	
+	make_option("--ChIPAlignFileList", 
+				type="character", 
+				default=NULL, 
+				help="Applicable only for HiChIP data processing. 
+					Comma or colon separated list of ChIP-seq alignment files. 
+					Either BAM or bedgraph formatted file is supported. 
+					Default = NULL. 
+					User can: a) either provide two files, one for each category, or 
+					b) provide ChIP seq alignment files for each sample. 
+					If this parameter is empty, differential loops would be analyzed alright 
+					but their underlying 1D (ChIP) differences would not."),
 
-	make_option(c("--Overwrite"), type="integer", action="store", default=0, help="Binary variable. If 1, overwrites existing results. Default = 0.")
+	make_option("--CovThr", 
+				type="integer", 
+				action="store", 
+				default=25, 
+				help="Applicable only for HiChIP data processing. 
+				Threshold signifying the maximum allowed deviation of ChIP coverage between two categories for which the bins would be considered as 1D invariant (ND). 
+				Default (or if user specifies value <=0 or > 100) = 25, 
+				means 25% deviation is set as maximum. 
+				If user chooses 50, 50% maximum ChIP seq coverage deviation would be allowed."),
+
+	#==================
+	# Miscellaneous parameters
+
+  	make_option("--SuffixStr", 
+				type="character", 
+				default=NULL, 
+				help="This custom string can be used to denote specific input conditions. 
+				Such as DESeq2_Covariate. 
+				If --Overwrite is 0, using different suffix strings would help to store outputs in different folders without re-computing majority of the differential analysis. 
+				Default = NULL."),
+
+	make_option("--Overwrite", 
+				type="integer", 
+				action="store", 
+				default=0, 
+				help="Binary variable. If 1, overwrites existing results. 
+				Default = 0.")
 
 ); 
 
@@ -62,6 +184,7 @@ opt = parse_args(opt_parser);
 
 #					
 # ============= process the input arguments =============
+# ============= check the parameters and exit condition if required ==================
 # 
 
 if (is.null(opt$ChrSizeFile)) {
@@ -74,11 +197,11 @@ if (is.null(opt$OutDir)) {
 	stop("ERROR !!!!!!! Output directory is not provided - check the option --OutDir \n", call.=FALSE)
 }
 
-if (is.null(opt$InpTable)) {	
+if (is.null(opt$InpTable)) {
 	print_help(opt_parser)
-	stop("ERROR !!!!!!! Input table file containing FitHiChIP loops, replicate information and covariates is not provided - check the option --InpTable \n", call.=FALSE)
+	stop("ERROR !!!!!!! Input table file containing FitHiChIP loops, replicate information and covariates is not provided - check the option --InpTable \n", call.=FALSE) # nolint
 }
-InpTableData <- data.table::fread(opt$InpTable, header=T)
+InpTableData <- data.table::fread(opt$InpTable, header=TRUE)
 
 ## list of FitHiChIP loop files
 AllLoopList <- as.vector(InpTableData[,1])
@@ -156,7 +279,7 @@ if (is.null(opt$LFCThr)) {
 if (is.null(opt$bcv)) {
 	bcv_Thr <- DEFAULT_bcv_THR
 } else {
-	bcv_Thr <- as.numeric(opt$bcv)	
+	bcv_Thr <- as.numeric(opt$bcv)
 }
 
 # max allowed deviation for ChIP seq coverage
@@ -189,26 +312,19 @@ if (!is.null(opt$ChIPAlignFileList)) {
 	ChIPAlignFileList <- c()
 }
 
-cat(sprintf("\n *** given Differential analysis model (parameter --DiffModel) : %s ", opt$DiffModel))
-if ((opt$DiffModel < 0) | (opt$DiffModel > 1)) {
-	stop("ERROR !!!!!!! The parameter --DiffModel should have a value either 0 (default) or 1 (distance stratification). Check the parameter. \n", call.=FALSE)
+cat(sprintf("\n *** Distance stratification option (parameter --DistStrat) : %s ", opt$DistStrat))
+if ((opt$DistStrat < 0) | (opt$DistStrat > 1)) {
+	stop("ERROR !!!!!!! The parameter --DistStrat should have a value either 0 (no stratification) or 1 (distance stratification). Check the parameter. \n", call.=FALSE)
 }
 
-## DESeq2 + no replicates for at least one category
-if (((ReplicaCount[1] == 1) | (ReplicaCount[2] == 1)) & (opt$UseDESeq2 == 1)) {
-	stop("ERROR !!!!! DESEQ2 is used for differential analysis (parameter --UseDESeq2 is 1) but at least one of the input categories have only one sample (i.e. no replicates) - so, DESeq2 cannot be used for the differential analysis - exit !!! \n", call.=FALSE)
-}
-
-# get EdgeR model and validate with the replica count
-# change the model if necessary
-EdgeRModel <- as.integer(opt$EdgeRModel)
-if (((ReplicaCount[1] == 1) | (ReplicaCount[2] == 1)) & (opt$UseDESeq2 == 0) & (EdgeRModel > 0)) {
-	stop("ERROR !!!!! EdgeR is to be used (parameter --UseDESeq2 is 0), and at least one of the input categories have no replicates - so EdgeR should be used with default exact test model (parameter --EdgeRModel should be zero) - exit !!! \n", call.=FALSE)
-}
+# ## DESeq2 or edgeR GLM + no replicates for at least one category
+# if (((ReplicaCount[1] == 1) | (ReplicaCount[2] == 1)) & (opt$Model != 1) & (opt$Model != 4)) {
+# 	stop("ERROR !!!!! At least one of the input categories have only one sample (i.e. no replicates). Only edgeR exact test model (with default test or wilcoxon rank sum test) is applicable - bur the parameter --Model is not 1 or 4 - exit !!! \n", call.=FALSE)
+# }
 
 # check the distance stratification condition
-if ((opt$DiffModel == 1) & (opt$DSBinSize <= 0)) {
-	stop("ERROR !!!!! distance stratification is employed (parameter --DiffModel is 1) but the corresponding bin size (parameter --DSBinSize) is not positive - Exit !!! \n", call.=FALSE)
+if ((opt$DistStrat == 1) & (opt$DSBinSize <= 0)) {
+	stop("ERROR !!!!! distance stratification is employed (parameter --DistStrat is 1) but the corresponding bin size (parameter --DSBinSize) is not positive - Exit !!! \n", call.=FALSE)
 }
 
 # combining all the replica labels
@@ -273,8 +389,8 @@ sink(textfile)
 ncore <- detectCores()
 cat(sprintf("\n\n ==>>>> Number of cores in the system: %s ", ncore))
 
-register(MulticoreParam(min(ncore, 4)))
-# register(MulticoreParam(ncore))
+# register(MulticoreParam(min(ncore, 4)))
+register(MulticoreParam(ncore))
 # register(SerialParam())
 
 # =============== get the bin size of the input loops ===============
@@ -331,23 +447,16 @@ if (HiC_Data_Process == FALSE) {
 	cat(sprintf("\n ===>>> ChIP-seq coverage difference (fraction): %s ", ChIP_Cov_Thr))
 }
 
-cat(sprintf("\n ===>>> Differential loop analysis model employed: (0: All loops, 1: Distance stratification) : %s ", opt$DiffModel))
+cat(sprintf("\n ===>>> Differential loop analysis model employed: (0: All loops, 1: Distance stratification) : %s ", opt$DistStrat))
 cat(sprintf("\n ===>>> Distance stratification bin size ? (20000 means 20 Kb) : %s ", opt$DSBinSize))
-if (opt$UseDESeq2 == 0) {
-	cat(sprintf("\n ===>>> using EdgeR for differential analysis \n statistical model for EdgeR ([0] - exact Test, [1] - Quasi-likelihood (QL) F-Test (glmQLFit + glmQLFTest), [2] - Quasi-likelihood (QL) F-Test with fold change based stringent filtering (glmQLFit + glmTreat), [3] - likelihood ratio test (glmFit + glmLRT), [4] - likelihood ratio test with fold change based stringent filtering (glmFit + glmTreat)) : %s ", EdgeRModel))
-} else {
-	cat(sprintf("\n ===>>> using DESeq2 for differential analysis "))
-}
+cat(sprintf("\n ===>>> Differential analysis model (0: DESeq2, 1: edgeR exact Test, 2: edgeR GLM + LRT, 3: edgeR GLM + QL F-test, 4: Wilcoxon rank sum test on edgeR TMM normalized count : %s ", opt$Model))
 
 cat(sprintf("\n ===>>> FDR threshold for differential analysis (DESeq / EdgeR) : %s ", FDR_Th_DESeq))
 cat(sprintf("\n ===>>> Log Fold change threshold for differential analysis : %s ", FOLD_Change_Thr))
-if (opt$UseDESeq2 == 0) {
-	cat(sprintf("\n ===>>> bcv option (constant) for differential analysis (specific to EdgeR) : %s ", bcv_Thr))
-}
+cat(sprintf("\n ===>>> bcv option (constant) for differential analysis (specific to EdgeR) : %s ", bcv_Thr))
 
 cat(sprintf("\n ===>>> Choosing background for differential analysis ====== only using loops with FitHiChIP q-value < 0.1 in at least one sample (1) or using all possible contacts (0)  : %s ", opt$PreFilt))
 cat(sprintf("\n ===>>> overwrite existing output ? (1: yes, 0: no) : %s ", opt$Overwrite))
-
 
 #
 # =============== (if ChIP-seq data is provided)
@@ -360,7 +469,9 @@ if (HiC_Data_Process == FALSE) {
 	
 	MergedChIPCovFile <- paste0(ChIP_OutDir, '/ChIP_Coverage_ALL.bed')
 	if ((file.exists(MergedChIPCovFile) == FALSE) | (opt$Overwrite == 1)) {
-		Create_Merged_ChIP_Coverage_File(MergedChIPCovFile, ChIP_OutDir, opt$ChrSizeFile, BINSIZE, ChIPAlignFileList, ChIPAlignFileCountVec, CategoryList)
+		Create_Merged_ChIP_Coverage_File(MergedChIPCovFile, ChIP_OutDir, 
+										opt$ChrSizeFile, BINSIZE, ChIPAlignFileList, 
+										ChIPAlignFileCountVec, CategoryList)
 	}
 	
 	##
@@ -373,14 +484,19 @@ if (HiC_Data_Process == FALSE) {
 	## this file stores the differential 1D bins (derived by edgeR default model)
 	SignificantBinFile <- paste0(ChIP_OutDir, '/ChIP_Coverage_EdgeR_Default_SIG.bed')
 
-	if ((file.exists(ChIP_1D_NonDiff_BinFile) == FALSE) | (file.exists(SignificantBinFile) == FALSE) | (opt$Overwrite == 1)) {
+	if ((file.exists(ChIP_1D_NonDiff_BinFile) == FALSE) | 
+		(file.exists(SignificantBinFile) == FALSE) | (opt$Overwrite == 1)) {
 		
 		# merged ChIP-seq coverage for all input samples
 		Merged_ChIPCovData <- data.table::fread(MergedChIPCovFile, header=T)
 	
 		# count matrix for EdgeR
 		# 1. bin indices, 2. midpoints 3. their coverages (scaled) for both categories
-		CountData_1D <- cbind.data.frame(seq(1,nrow(Merged_ChIPCovData)), Merged_ChIPCovData[,1], (Merged_ChIPCovData[,2] + Merged_ChIPCovData[,3])/2, Merged_ChIPCovData[,4:ncol(Merged_ChIPCovData)])
+		CountData_1D <- cbind.data.frame(
+							seq(1,nrow(Merged_ChIPCovData)), 
+							Merged_ChIPCovData[,1], 
+							(Merged_ChIPCovData[,2] + Merged_ChIPCovData[,3])/2, 
+							Merged_ChIPCovData[,4:ncol(Merged_ChIPCovData)])
 		colnames(CountData_1D) <- c("Idx", "chr", "mid", colnames(Merged_ChIPCovData)[4:ncol(Merged_ChIPCovData)])
 		CountDataColNames_1D <- colnames(CountData_1D)		
 		if (0) {
@@ -390,7 +506,8 @@ if (HiC_Data_Process == FALSE) {
 	
 		# appy EdgeR on ChIP coverage 
 		# consider only FDR criterion - no fold change criterion is used
-		ApplyEdgeR_ChIP(ChIP_OutDir, CountData_1D[, 4:ncol(CountData_1D)], CategoryList, ChIPAlignFileCountVec, 'ChIP_Coverage', bcv_Thr)
+		ApplyEdgeR_ChIP(ChIP_OutDir, CountData_1D[, 4:ncol(CountData_1D)], 
+						CategoryList, ChIPAlignFileCountVec, 'ChIP_Coverage', bcv_Thr)
 		cat(sprintf("\n\n *** Performed EdgeR on ChIP coverage *** \n\n"))
 
 		# write the input ChIP coverage along with EdgeR output for all 1D bins
@@ -439,7 +556,9 @@ if (HiC_Data_Process == FALSE) {
 	system(paste("cp", MergedChIPCovFile, MergedChIPCovFile_Scaled))
 	
 	if ((file.exists(scaled_ChIPCovFile1) == FALSE) | (file.exists(scaled_ChIPCovFile2) == FALSE) | (opt$Overwrite == 1)) {
-		Create_Scaled_ChIP_Coverage_with_Label(MergedChIPCovFile_Scaled, ChIPAlignFileCountVec, scaled_ChIPCovFile1, scaled_ChIPCovFile2, ChIP_1D_NonDiff_BinFile)	
+		Create_Scaled_ChIP_Coverage_with_Label(
+			MergedChIPCovFile_Scaled, ChIPAlignFileCountVec, 
+			scaled_ChIPCovFile1, scaled_ChIPCovFile2, ChIP_1D_NonDiff_BinFile)
 	}
 
 	## create WashU browser tracks
@@ -485,7 +604,8 @@ if ((file.exists(UnionLoopFile) == FALSE) | (opt$Overwrite == 1)) {
 	if (opt$PreFilt == 1) {
 		## previously we used q-value threshold of 0.01 (i.e. FitHiChIP significant in at least one input sample)
 		## now we are using q-value threshold of 0.1 (slightly lenient)
-		MergeLoops(AllLoopList, MidList, QColList, BINSIZE, UnionLoopFile, CHRLIST_NAMENUM, FDRFilt=TRUE, FDRThr=0.1)	#FDR_Th_FitHiChIP)
+		MergeLoops(AllLoopList, MidList, QColList, BINSIZE, UnionLoopFile, CHRLIST_NAMENUM, 
+					FDRFilt=TRUE, FDRThr=DEFAULT_FDR_LOOP_FILT_BCK)
 	} else {
 		MergeLoops(AllLoopList, MidList, QColList, BINSIZE, UnionLoopFile, CHRLIST_NAMENUM, FDRFilt=FALSE)
 	}
@@ -498,9 +618,14 @@ cat(sprintf("\n\n *** Created union of FitHiChIP loops *** \n\n"))
 UnionLoopFeatureFile <- paste0(MainDir, '/MasterSheet_', CategoryList[1], '_', CategoryList[2], '_Loops_Features.bed')
 if ((file.exists(UnionLoopFeatureFile) == FALSE) | (opt$Overwrite == 1)) {
 	if (HiC_Data_Process == FALSE) {
-		FillFeatureValues(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, CHRLIST_NAMENUM, BINSIZE, c(scaled_ChIPCovFile1, scaled_ChIPCovFile2), AllRepLabels, CategoryList, CCColList, QColList, MidList)
+		FillFeatureValues(UnionLoopFile, UnionLoopFeatureFile, 
+							AllLoopList, BINSIZE, 
+							c(scaled_ChIPCovFile1, scaled_ChIPCovFile2), 
+							AllRepLabels, CategoryList, CCColList, QColList, MidList)
 	} else {
-		FillFeatureValues(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, CHRLIST_NAMENUM, BINSIZE, c(), AllRepLabels, CategoryList, CCColList, QColList, MidList)
+		FillFeatureValues(UnionLoopFile, UnionLoopFeatureFile, 
+							AllLoopList, BINSIZE, c(), 
+							AllRepLabels, CategoryList, CCColList, QColList, MidList)
 	}
 }
 cat(sprintf("\n\n *** Created master sheet of loops (with feature values) *** \n\n"))
@@ -560,8 +685,14 @@ cat(sprintf("\n **** Chromsome list in master sheet : %s \n", paste(as.vector(Ch
 #
 
 ## number of significant replicates
-SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[1:ReplicaCount[1]], QVal_ColList[1:ReplicaCount[1]], FDR_Th_FitHiChIP)
-SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
+SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, 
+					RawCC_ColList[1:ReplicaCount[1]], 
+					QVal_ColList[1:ReplicaCount[1]], 
+					FDR_Th_FitHiChIP)
+SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, 
+					RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], 
+					QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], 
+					FDR_Th_FitHiChIP)
 SigReplDF <- cbind.data.frame(MasterSheetData, data.frame(f1=SigVec_Cat1, f2=SigVec_Cat2))
 colnames(SigReplDF) <- c(colnames(MasterSheetData), c(paste0(CategoryList[1], '_SigRepl'), paste0(CategoryList[2], '_SigRepl')))
 
@@ -576,65 +707,36 @@ if (length(idx) > 0) {
 #
 # ========== create output directory for the current differential model
 #
-if (opt$DiffModel == 0) {
-	# DiffLoopDir <- paste0(MainDir, '/DiffModel_0_AllLoops/FDR_', FDR_Th_DESeq, '_LOG2FC_', FOLD_Change_Thr)
-	DiffLoopDir <- paste0(MainDir, '/DiffModel_0_AllLoops')
-} else if (opt$DiffModel == 1) {
-	# DiffLoopDir <- paste0(MainDir, '/DiffModel_1_DistStrat/Binsize_', opt$DSBinSize, '/FDR_', FDR_Th_DESeq, '_LOG2FC_', FOLD_Change_Thr)
-	DiffLoopDir <- paste0(MainDir, '/DiffModel_1_DistStrat_', opt$DSBinSize)
+if (opt$DistStrat == 0) {
+	DiffLoopDir <- paste0(MainDir, '/No_DistStrat')
+} else {
+	DiffLoopDir <- paste0(MainDir, '/With_DistStrat_', opt$DSBinSize)
 }
 
 ##==========
-## for each output folder, we include the timestamp
-## to compare among DESeq2 models executed in different timing
+## output folder names
 ##==========
-if (opt$UseDESeq2 == 1) {
-	## DESeq2 is employed
-	if (is.null(opt$SuffixStr)) {
-		DiffLoopDir <- paste0(DiffLoopDir, '/DESeq2')
-	} else {
-		DiffLoopDir <- paste0(DiffLoopDir, '/DESeq2_', opt$SuffixStr)
-	}
-} else {
-	## edgeR is employed
-	if (EdgeRModel == 0) {
-		if (is.null(opt$SuffixStr)) {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_exactTest')
-		} else {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_exactTest_', opt$SuffixStr)
-		}
-	} else if (EdgeRModel == 1) {
-		if (is.null(opt$SuffixStr)) {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmQLFTest')
-		} else {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmQLFTest_', opt$SuffixStr)
-		}
-	} else if (EdgeRModel == 2) {
-		if (is.null(opt$SuffixStr)) {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmTreatQL')
-		} else {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmTreatQL_', opt$SuffixStr)
-		}
-	} else if (EdgeRModel == 3) {
-		if (is.null(opt$SuffixStr)) {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmLRT')
-		} else {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmLRT_', opt$SuffixStr)
-		}
-	} else {
-		if (is.null(opt$SuffixStr)) {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmTreat')
-		} else {
-			DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmTreat_', opt$SuffixStr)
-		}
-	}
+if (opt$Model == 0) {
+	DiffLoopDir <- paste0(DiffLoopDir, '/DESeq2')
+} else if (opt$Model == 1) {
+	DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_exactTest')
+} else if (opt$Model == 2) {
+	DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmLRT')
+} else if (opt$Model == 3) {
+	DiffLoopDir <- paste0(DiffLoopDir, '/EdgeR_glmQLFTest')
+} else if (opt$Model == 4) {
+	DiffLoopDir <- paste0(DiffLoopDir, '/Wilcox_rank_sum')
+}
+
+if (!is.null(opt$SuffixStr)) {
+	DiffLoopDir <- paste0(DiffLoopDir, '_', opt$SuffixStr)
 }
 system(paste("mkdir -p", DiffLoopDir))
 
 #
 # ================== apply DESeq for differential analysis ==================
 #
-if (opt$UseDESeq2 == 1) {
+if (opt$Model == 0) {
 
 	## count matrix file
 	CountDataFile <- paste0(DiffLoopDir, '/count_matrix.bed')
@@ -649,16 +751,16 @@ if (opt$UseDESeq2 == 1) {
 	CompleteLoopFile <- paste0(DiffLoopDir, '/FINAL_DESEQ_Results.bed')
 
 	## stores count data file for the current distance value
-	## applicable for the DiffModel = 1
+	## applicable for the opt$DistStrat = 1
 	CountDataFile_CurrDist <- paste0(DiffLoopDir, '/count_matrix_CurrDist.bed')			
 
 	## check if the DESeq2 results are already computed
 	if (file.exists(CompleteLoopFile) == FALSE) {
 
-		if (opt$DiffModel == 0) {
+		if (opt$DistStrat == 0) {
 			
 			##=============
-			# process all loops at once 
+			# no distance stratification - process all loops at once 
 			##=============
 			# create count matrix
 			Create_DESeq2_Compatible_Count_Matrix(MasterSheetData, RawCC_ColList, CountDataFile)
@@ -677,14 +779,20 @@ if (opt$UseDESeq2 == 1) {
 			}
 
 			## call DESEQ2 for this data
-			Perform_DESeq2(DiffLoopDir, opt$InpTable, CountData, SampleInfoFile, DESeq_ResFile, opt$DiffModel, suffixStr, FDR_Th_DESeq)
+			Perform_DESeq2(DiffLoopDir, opt$InpTable, CountData, 
+							SampleInfoFile, DESeq_ResFile, opt$Model, opt$DistStrat, 
+							suffixStr, FDR_Th_DESeq)
 
 			## read the DESEQ2 results
 			DESEQRes <- data.table::fread(DESeq_ResFile, header=T)
 			
 			## append the mastersheet data and the significance of individual samples
-			SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[1:ReplicaCount[1]], QVal_ColList[1:ReplicaCount[1]], FDR_Th_FitHiChIP)
-			SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
+			SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, 
+											RawCC_ColList[1:ReplicaCount[1]], 
+											QVal_ColList[1:ReplicaCount[1]], 
+											FDR_Th_FitHiChIP)
+			SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, 
+								RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
 			SigReplDF <- data.frame(f1=SigVec_Cat1, f2=SigVec_Cat2)
 			colnames(SigReplDF) <- c(paste0(CategoryList[1], '_SigRepl'), paste0(CategoryList[2], '_SigRepl'))
 			OutDESeqAllRes <- cbind.data.frame(MasterSheetData, DESEQRes, SigReplDF)
@@ -693,7 +801,7 @@ if (opt$UseDESeq2 == 1) {
 		} else {			
 
 			##=============
-			# model 1 - distance stratification
+			# distance stratification
 			##=============
 			bool_DESEQ_Out_Dump <- FALSE
 
@@ -744,7 +852,9 @@ if (opt$UseDESeq2 == 1) {
 				}
 
 				# function to call DESEQ2 for this distance value
-				Perform_DESeq2(DiffLoopDir, opt$InpTable, CountData, SampleInfoFile, DESeq_ResFile, opt$DiffModel, suffixStr, FDR_Th_DESeq)
+				Perform_DESeq2(DiffLoopDir, opt$InpTable, CountData, 
+								SampleInfoFile, DESeq_ResFile, opt$Model, opt$DistStrat, 
+								suffixStr, FDR_Th_DESeq)
 
 				if (file.exists(DESeq_ResFile)) {
 					## read the DESEQ2 results
@@ -779,8 +889,12 @@ if (opt$UseDESeq2 == 1) {
 			OutDESeqAllRes$FDR_BH <- p.adjust(OutDESeqAllRes$pvalue, method = "BH")
 
 			##=== also append the number of significant replicates
-			SigVec_Cat1 <- GetCntNumRepVec(OutDESeqAllRes, RawCC_ColList[1:ReplicaCount[1]], QVal_ColList[1:ReplicaCount[1]], FDR_Th_FitHiChIP)
-			SigVec_Cat2 <- GetCntNumRepVec(OutDESeqAllRes, RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
+			SigVec_Cat1 <- GetCntNumRepVec(OutDESeqAllRes, 
+											RawCC_ColList[1:ReplicaCount[1]], 
+											QVal_ColList[1:ReplicaCount[1]], 
+											FDR_Th_FitHiChIP)
+			SigVec_Cat2 <- GetCntNumRepVec(OutDESeqAllRes, 
+						RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
 			SigReplDF <- data.frame(f1=SigVec_Cat1, f2=SigVec_Cat2)
 			colnames(SigReplDF) <- c(paste0(CategoryList[1], '_SigRepl'), paste0(CategoryList[2], '_SigRepl'))			
 
@@ -788,7 +902,7 @@ if (opt$UseDESeq2 == 1) {
 			OutDESeqAllRes <- cbind.data.frame(OutDESeqAllRes, SigReplDF)
 			write.table(OutDESeqAllRes, CompleteLoopFile, row.names=F, col.names=T, sep="\t", quote=F, append=F)
 
-		}	# end if - different models (opt$DiffModel)
+		}	# end if - distance stratification condition
 
 		##====== remove temporary files and objects
 		if (exists("CountData")) {
@@ -834,8 +948,9 @@ if (opt$UseDESeq2 == 1) {
 	##================
 	## extract significant loops
 	##================
-	if (opt$DiffModel == 0) {
+	if (opt$DistStrat == 0) {
 		
+		## No distance stratification
 		## two sets of significant loops
 		## one for the conventional FDR, one for the IHW corrected FDR
 		## loops significant in at least one input sample are reported
@@ -851,7 +966,7 @@ if (opt$UseDESeq2 == 1) {
 		
 		## categorize these DESeq2 significant loops 
 		## according to differential / non-differential ChIP coverage		
-		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)	
+		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)	
 		
 		##
 		##========= set 2: FDR computed by IHW
@@ -864,7 +979,7 @@ if (opt$UseDESeq2 == 1) {
 
 		## categorize these DESeq2 significant loops 
 		## according to differential / non-differential ChIP coverage
-		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)	
+		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)	
 		
 	} else {
 
@@ -879,7 +994,7 @@ if (opt$UseDESeq2 == 1) {
 
 		## categorize these DESeq2 significant loops 
 		## according to differential / non-differential ChIP coverage
-		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)
+		Categorize_DiffLoops(DESeq2_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)
 		
 	}				
 
@@ -890,7 +1005,7 @@ if (opt$UseDESeq2 == 1) {
 #
 # ================== apply EdgeR for differential analysis ==================
 #
-if (opt$UseDESeq2 == 0) {
+if ((opt$Model >= 1) & (opt$Model <= 4)) {
 
 	## count matrix file
 	CountDataFile <- paste0(DiffLoopDir, '/count_matrix.bed')
@@ -905,16 +1020,16 @@ if (opt$UseDESeq2 == 0) {
 	CompleteLoopFile <- paste0(DiffLoopDir, '/FINAL_edgeR_Results.bed')
 
 	## stores count data file for the current distance value
-	## applicable for the DiffModel = 1
+	## applicable for the Distance Stratification
 	CountDataFile_CurrDist <- paste0(DiffLoopDir, '/count_matrix_CurrDist.bed')	
 
 	## check if the EdgeR results are already computed
 	if (file.exists(CompleteLoopFile) == FALSE) {	
 
-		if (opt$DiffModel == 0) {
+		if (opt$DistStrat == 0) {
 			
 			##=============
-			# model 0 - process all loops at once 
+			# No Distance stratification
 			##=============
 			# create count matrix
 			Create_EdgeR_Compatible_Count_Matrix(MasterSheetData, RawCC_ColList, DiffLoopDir, CountDataFile)			
@@ -930,14 +1045,20 @@ if (opt$UseDESeq2 == 0) {
 			}
 
 			## call EdgeR for this data
-			Perform_EdgeR(CountData, DiffLoopDir, opt$InpTable, SampleInfoFile, EdgeRModel, EdgeR_ResFile, opt$DiffModel, suffixStr, FDR_Th_DESeq, bcv_Thr)
+			Perform_EdgeR(CountData, DiffLoopDir, opt$InpTable, 
+							SampleInfoFile, EdgeR_ResFile, 
+							opt$Model, opt$DistStrat, suffixStr, FDR_Th_DESeq, bcv_Thr)
 			
 			## read the edgeR results
 			EdgeRRes <- data.table::fread(EdgeR_ResFile, header=T)
 			
 			## append the mastersheet data and the significance of individual samples
-			SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[1:ReplicaCount[1]], QVal_ColList[1:ReplicaCount[1]], FDR_Th_FitHiChIP)
-			SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
+			SigVec_Cat1 <- GetCntNumRepVec(MasterSheetData, 
+											RawCC_ColList[1:ReplicaCount[1]], 
+											QVal_ColList[1:ReplicaCount[1]], 
+											FDR_Th_FitHiChIP)
+			SigVec_Cat2 <- GetCntNumRepVec(MasterSheetData, 
+							RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
 			SigReplDF <- data.frame(f1=SigVec_Cat1, f2=SigVec_Cat2)
 			colnames(SigReplDF) <- c(paste0(CategoryList[1], '_SigRepl'), paste0(CategoryList[2], '_SigRepl'))
 			
@@ -948,7 +1069,7 @@ if (opt$UseDESeq2 == 0) {
 		} else {
 
 			##=============
-			# model 1 - distance stratification
+			# distance stratification
 			##=============
 			bool_EdgeR_Out_Dump <- FALSE
 
@@ -1001,7 +1122,9 @@ if (opt$UseDESeq2 == 0) {
 				}
 
 				## call EdgeR for this data
-				Perform_EdgeR(CountData, DiffLoopDir, opt$InpTable, SampleInfoFile, EdgeRModel, EdgeR_ResFile, opt$DiffModel, suffixStr, FDR_Th_DESeq, bcv_Thr)
+				Perform_EdgeR(CountData, DiffLoopDir, opt$InpTable, 
+								SampleInfoFile, EdgeR_ResFile, 
+								opt$Model, opt$DistStrat, suffixStr, FDR_Th_DESeq, bcv_Thr)
 
 				if (file.exists(EdgeR_ResFile)) {
 					
@@ -1037,8 +1160,12 @@ if (opt$UseDESeq2 == 0) {
 			OutEdgeRAllRes$FDR_BH <- p.adjust(OutEdgeRAllRes$pvalue, method = "BH")
 
 			##=== also append the number of significant replicates
-			SigVec_Cat1 <- GetCntNumRepVec(OutEdgeRAllRes, RawCC_ColList[1:ReplicaCount[1]], QVal_ColList[1:ReplicaCount[1]], FDR_Th_FitHiChIP)
-			SigVec_Cat2 <- GetCntNumRepVec(OutEdgeRAllRes, RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
+			SigVec_Cat1 <- GetCntNumRepVec(OutEdgeRAllRes, 
+											RawCC_ColList[1:ReplicaCount[1]], 
+											QVal_ColList[1:ReplicaCount[1]], 
+											FDR_Th_FitHiChIP)
+			SigVec_Cat2 <- GetCntNumRepVec(OutEdgeRAllRes, 
+								RawCC_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], QVal_ColList[(ReplicaCount[1]+1):(ReplicaCount[1]+ReplicaCount[2])], FDR_Th_FitHiChIP)
 			SigReplDF <- data.frame(f1=SigVec_Cat1, f2=SigVec_Cat2)
 			colnames(SigReplDF) <- c(paste0(CategoryList[1], '_SigRepl'), paste0(CategoryList[2], '_SigRepl'))			
 
@@ -1046,7 +1173,7 @@ if (opt$UseDESeq2 == 0) {
 			OutEdgeRAllRes <- cbind.data.frame(OutEdgeRAllRes, SigReplDF)
 			write.table(OutEdgeRAllRes, CompleteLoopFile, row.names=F, col.names=T, sep="\t", quote=F, append=F)		
 
-		}	# end if - different models (opt$DiffModel)
+		}	# end if - distance stratification
 
 		##====== remove temporary files and objects		
 		if (exists("MasterSheetData")) {
@@ -1086,7 +1213,7 @@ if (opt$UseDESeq2 == 0) {
 	##================
 	## extract significant loops
 	##================
-	if (opt$DiffModel == 0) {
+	if (opt$DistStrat == 0) {
 
 		## two sets of significant loops
 		## one for the conventional FDR, one for the IHW corrected FDR
@@ -1102,7 +1229,7 @@ if (opt$UseDESeq2 == 0) {
 		system(paste0("awk -F\'[\t]\' \'function abs(v) {return v < 0 ? -v : v} {if ((NR==1) || (($(NF-3) <= ", FDR_Th_DESeq, ") && (abs($(NF-6)) >= ", FOLD_Change_Thr, "))) {print $0}}\' ", CompleteLoopFile, " | awk -F\'[\t]\' \'((NR==1) || ($(NF-1)>0) || ($NF>0))\' - > ", OutLoopFile))
 		## categorize these edgeR significant loops 
 		## according to differential / non-differential ChIP coverage		
-		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)	
+		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)	
 
 
 		##
@@ -1115,7 +1242,7 @@ if (opt$UseDESeq2 == 0) {
 		system(paste0("awk -F\'[\t]\' \'function abs(v) {return v < 0 ? -v : v} {if ((NR==1) || (($(NF-2) <= ", FDR_Th_DESeq, ") && (abs($(NF-6)) >= ", FOLD_Change_Thr, "))) {print $0}}\' ", CompleteLoopFile, " | awk -F\'[\t]\' \'((NR==1) || ($(NF-1)>0) || ($NF>0))\' - > ", OutLoopFile))
 		## categorize these edgeR significant loops 
 		## according to differential / non-differential ChIP coverage
-		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)	
+		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)	
 		
 	} else {
 
@@ -1129,7 +1256,7 @@ if (opt$UseDESeq2 == 0) {
 		system(paste0("awk -F\'[\t]\' \'function abs(v) {return v < 0 ? -v : v} {if ((NR==1) || (($(NF-2) <= ", FDR_Th_DESeq, ") && (abs($(NF-6)) >= ", FOLD_Change_Thr, "))) {print $0}}\' ", CompleteLoopFile, " | awk -F\'[\t]\' \'((NR==1) || ($(NF-1)>0) || ($NF>0))\' - > ", OutLoopFile))
 		## categorize these edgeR significant loops 
 		## according to differential / non-differential ChIP coverage		
-		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$UseDESeq2, EdgeRModel, HiC_Data_Process, opt$CovThr)
+		Categorize_DiffLoops(edgeR_SigDir, OutLoopFile, CategoryList, QVal_ColList, opt$Model, HiC_Data_Process, opt$CovThr)
 	}
 
 	cat(sprintf("\n\n *** Applied EdgeR for differential loop finding *** \n\n"))

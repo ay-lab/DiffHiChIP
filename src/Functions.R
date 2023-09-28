@@ -325,7 +325,8 @@ Create_Scaled_ChIP_Coverage_with_Label <- function(MergedChIPCovFile, ChIPAlignF
 #======================
 # this function creates merged ChIP-seq coverage file, from the input ChIP-seq files of both categories
 #======================
-Create_Merged_ChIP_Coverage_File <- function(MergedChIPCovFile, OutDir, ChrSizeFile, BinSize, ChIPAlignFileList, ChIPAlignFileCountVec, CategoryList) {
+Create_Merged_ChIP_Coverage_File <- function(MergedChIPCovFile, OutDir, 
+											ChrSizeFile, BinSize, ChIPAlignFileList, ChIPAlignFileCountVec, CategoryList) {
 
 	tempfile1 <- paste0(OutDir, '/ChIP_Coverage_temp1.bed')
 	tempfile2 <- paste0(OutDir, '/ChIP_Coverage_temp2.bed')
@@ -539,20 +540,29 @@ ApplyEdgeR_ChIP <- function(MainDir, CountData, CategoryList, ReplicaCount, pref
 # UnionLoopFile: where output is written
 # ChrNames: list of chromosome names
 # FDRFilt: if TRUE, last field is checked and only the loops with FDR value < FDRThr are considered for merging
-# FDRThr: default 0.01 unless provided
+# FDRThr: default 0.1 unless provided
 #======================================================
-MergeLoops <- function(LoopList, MidList, QColList, BinSize, UnionLoopFile, ChrNames, FDRFilt=FALSE, FDRThr=0.01) {
+MergeLoops <- function(LoopList, MidList, QColList, BinSize, 
+						UnionLoopFile, ChrNames, FDRFilt=FALSE, FDRThr=0.1) {
 	
 	cat(sprintf("\n\n **** within function - MergeLoops *** \n\n"))
-
-	UnionLoopTempFile <- paste0(dirname(UnionLoopFile), '/temp_merge_union.bed')
-	UnionLoopTempFile_1 <- paste0(dirname(UnionLoopFile), '/temp_merge_union_1.bed')
-
-	valid_chr_count <- 0
 	
-	for (chrIdx in (1:length(ChrNames))) {
+	## parallel processing for individual chromosomes
+	lapply( 1:length(ChrNames), function(chrIdx) {	
+	# for (chrIdx in (1:length(ChrNames))) {
+
 		currChr <- ChrNames[chrIdx]
 		cat(sprintf("\n processing chromosome : %s ", currChr))
+
+		UnionLoopTempFile <- paste0(dirname(UnionLoopFile), '/temp_merge_union_', currChr, '.bed')
+		UnionLoopTempFile_1 <- paste0(dirname(UnionLoopFile), '/temp_merge_union1_', currChr, '.bed')
+
+		if (file.exists(UnionLoopTempFile) == TRUE) {
+			system(paste("rm", UnionLoopTempFile))
+		}
+		if (file.exists(UnionLoopTempFile_1) == TRUE) {
+			system(paste("rm", UnionLoopTempFile_1))
+		}		
 
 		for (i in (1:length(LoopList))) {
 			# boolean value depicting the midpoint of the bin for the current loop file
@@ -564,22 +574,22 @@ MergeLoops <- function(LoopList, MidList, QColList, BinSize, UnionLoopFile, ChrN
 				# gzipped input file
 				if (FDRFilt == FALSE) {
 					if (midval == 1) {
-						system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - > ", UnionLoopTempFile_1))
+						system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - >> ", UnionLoopTempFile_1))
 					} else {
-						system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - > ", UnionLoopTempFile_1))
+						system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - >> ", UnionLoopTempFile_1))
 					}
 				} else {
 					if (midval == 1) {
 						if (qcol == -1) {
-							system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - > ", UnionLoopTempFile_1))
+							system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - >> ", UnionLoopTempFile_1))
 						} else {
-							system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - > ", UnionLoopTempFile_1))
+							system(paste0("zcat ", LoopList[i], " | awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' - >> ", UnionLoopTempFile_1))
 						}
 					} else {
 						if (qcol == -1) {
-							system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - > ", UnionLoopTempFile_1))
+							system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - >> ", UnionLoopTempFile_1))
 						} else {
-							system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - > ", UnionLoopTempFile_1))
+							system(paste0("zcat ", LoopList[i], " | awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' - >> ", UnionLoopTempFile_1))
 						}
 					}
 				}
@@ -587,54 +597,43 @@ MergeLoops <- function(LoopList, MidList, QColList, BinSize, UnionLoopFile, ChrN
 				# non-gzipped input file
 				if (FDRFilt == FALSE) {
 					if (midval == 1) {
-						system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+						system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 					} else {
-						system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+						system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 					}
 				} else {
 					if (midval == 1) {
 						if (qcol == -1) {
-							system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+							system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 						} else {
-							system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+							system(paste0("awk -v b=", BinSize, " \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"($2-(b/2))\"\t\"($2+(b/2))\"\t\"$3\"\t\"($4-(b/2))\"\t\"($4+(b/2))}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 						}
 					} else {
 						if (qcol == -1) {
-							system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+							system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($NF != \"NA\") && (sprintf(\"%0.400f\",$NF) <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 						} else {
-							system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " > ", UnionLoopTempFile_1))
+							system(paste0("awk \'{if ((NR>1) && ($1==\"", currChr, "\") && ($", qcol, " != \"NA\") && (sprintf(\"%0.400f\",$", qcol, ") <", FDRThr, ")) {print $1\"\t\"$2\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}\' ", LoopList[i], " >> ", UnionLoopTempFile_1))
 						}
 					}
 				}
 			}
-			if (i == 1) {
-				system(paste("cat", UnionLoopTempFile_1, ">", UnionLoopTempFile))
-			} else {
-				system(paste("cat", UnionLoopTempFile_1, ">>", UnionLoopTempFile))
-			}
 		}	# end loop input files
 
-		# check the number of loops for this chromosome
-		nline <- as.integer(system(paste("cat", UnionLoopTempFile, "| wc -l"), intern = TRUE))		
-		cat(sprintf("\n Number of loops for this current chromosome (union of input samples) : %s ", nline))
-		if (nline > 0) {
-			valid_chr_count <- valid_chr_count + 1
-			# sort the file, remove duplicate loops
-			if (valid_chr_count == 1) {
-				system(paste("sort -k2,2n -k5,5n", UnionLoopTempFile, "| uniq > ", UnionLoopFile))
-			} else {
-				system(paste("sort -k2,2n -k5,5n", UnionLoopTempFile, "| uniq >> ", UnionLoopFile))
-			}
-		}
-	}	# end processing chromosomes
+		## combine all the loops
+		system(paste("sort -k2,2n -k5,5n", UnionLoopTempFile_1, " | uniq > ", UnionLoopTempFile))
 
-	# remove temporary file
-	if (file.exists(UnionLoopTempFile)) {
-		system(paste("rm", UnionLoopTempFile))
-	}
-	if (file.exists(UnionLoopTempFile_1)) {
-		system(paste("rm", UnionLoopTempFile_1))
-	}
+		## remove the temporary files
+		if (file.exists(UnionLoopTempFile_1)) {
+			system(paste("rm", UnionLoopTempFile_1))
+		}
+
+	})	# end processing chromosomes - parallel processing
+
+	## create the final output file
+	system(paste0("cat ", dirname(UnionLoopFile), "/temp_merge_union_*.bed > ", UnionLoopFile))
+
+	## remove the temporary file
+	system(paste0("rm ", dirname(UnionLoopFile), "/temp_merge_union_*.bed"))
 
 	cat(sprintf("\n\n **** exit from function - MergeLoops *** \n\n"))
 
@@ -656,27 +655,33 @@ MergeLoops <- function(LoopList, MidList, QColList, BinSize, UnionLoopFile, ChrN
 # QColList: q-value column list for all input files
 # MidList: sequence of 1s or 0s where 1 means midpoint of a bin is mentioned
 #================================
-FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, CHRLIST_NAMENUM, BinSize, ChIPCovFileList, AllRepLabels, CategoryList, CCColList, QColList, MidList) {
+FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, 
+								AllLoopList, BinSize, 
+								ChIPCovFileList, AllRepLabels, 
+								CategoryList, CCColList, QColList, MidList) {
 
-	valid_chr_count <- 0
+	## get the chromosome list containing loops
+	tempchrfile <- paste0(dirname(UnionLoopFile), '/temp_chrlist.bed')
+	system(paste("cut -f1", UnionLoopFile, "|sort -k1,1 | uniq > ", tempchrfile))
+	CHRLIST_DF <- data.table::fread(tempchrfile, header=F)
+	CHRLIST <- as.vector(CHRLIST_DF[,1])
 
-	# temporary loop + feature containing file used per iteration
-	temp_final_UnionLoopFile <- paste0(dirname(UnionLoopFile), '/temp_final_mastersheet.bed')
+	lapply( 1:length(CHRLIST), function(chr_idx) {	
+	# for (chr_idx in (1:length(CHRLIST_NAMENUM))) {
+		chrName <- CHRLIST[chr_idx]
+		# cat(sprintf("\n ===>>> Within function FillFeatureValues --- processing chromosome : %s ", chrName))
 
-	UnionLoopTempFile1 <- paste0(dirname(UnionLoopFile), '/temp_CurrChr_Merged_Loops.bed')
-
-	for (chr_idx in (1:length(CHRLIST_NAMENUM))) {
-		chrName <- CHRLIST_NAMENUM[chr_idx]
-		cat(sprintf("\n ===>>> Within function FillFeatureValues --- processing chromosome : %s ", chrName))
+		## union loops for the current chromosome
+		UnionLoopTempFile1 <- paste0(dirname(UnionLoopFile), '/temp_Merged_Loops_', chrName, '.bed')
+		## temporary loop + feature containing file used per iteration
+		temp_final_UnionLoopFile <- paste0(dirname(UnionLoopFile), '/temp_mastersheet_', chrName, '.bed')
+		## stores temporary FitHiChIP loops for the current chromosome
+		InpTempFitHiChIPLoopFile <- paste0(dirname(UnionLoopFile), '/temp_InpFitHiChIPLoopFile_', chrName, '.bed')
+		## stores temporary ChIP coverage for the current chromosome
+		InpTempChIPCoverageFile <- paste0(dirname(UnionLoopFile), '/temp_InpChIPCoverageFile_', chrName, '.bed')
 
 		# first extract the loops involving current chromosome		
 		ExtractChrData(UnionLoopFile, chrName, UnionLoopTempFile1, header=FALSE)
-		nreadCurr <- GetNumLines(UnionLoopTempFile1)
-		if (nreadCurr == 0) {
-			# no loop for the current chromosome
-			next
-		}
-		# otherwise, read the loops for the current chromosome
 		MergedIntTempData <- data.table::fread(UnionLoopTempFile1, header=F)
 
 		# also get the interacting bins (start position divided by the bin size)
@@ -690,9 +695,6 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, 
 		# vectors to store feature values of individual loops
 		RawCC_Categ <- list()
 		QVal_Categ <- list()
-
-		# stores temporary FitHiChIP loops for the current chromosome
-		InpTempFitHiChIPLoopFile <- paste0(dirname(UnionLoopFile), '/temp_CurrChr_InpFitHiChIPLoopFile.bed')
 
 		for (i in (1:length(AllLoopList))) {
 			# default initialization for the current chromosome and current input FitHiChIP loop file
@@ -763,11 +765,6 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, 
 
 		}	# end loop FitHiChIP significance files
 
-		# delete the temporary file
-		if (file.exists(InpTempFitHiChIPLoopFile) == TRUE) {
-			system(paste("rm", InpTempFitHiChIPLoopFile))
-		}
-
 		#
 		# ============= process input ChIP-seq coverage files for two input categories ==========
 		#
@@ -779,9 +776,6 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, 
 			Seg1_ChIP_Label <- rep('HD', nrow(MergedIntTempData))
 			Seg2_ChIP_Label <- rep('HD', nrow(MergedIntTempData))
 		
-			# stores temporary ChIP coverage for the current chromosome
-			InpTempChIPCoverageFile <- paste0(dirname(UnionLoopFile), '/temp_CurrChr_InpChIPCoverageFile.bed')
-
 			for (i in (1:length(ChIPCovFileList))) {
 				seg1_chip_coverage_vec <- rep(0, nrow(MergedIntTempData))
 				seg2_chip_coverage_vec <- rep(0, nrow(MergedIntTempData))
@@ -831,19 +825,12 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, 
 
 			}	# end ChIP coverage file loop
 
-			# delete the temporary file
-			if (file.exists(InpTempChIPCoverageFile) == TRUE) {
-				system(paste("rm", InpTempChIPCoverageFile))
-			}
-
 		}	# end ChIP coverage file presence condition
-
 
 		#
 		# ============= for the current chromosome, merge the interacting regions =============
 		# ============= along with the features accumulated	=============
 		#
-		valid_chr_count <- valid_chr_count + 1		# chromosome counter
 		namesvec <- c("chr1", "start1", "end1", "chr2", "start2", "end2")
 
 		# if ChIP-seq coverage information is computed, insert coverage and label (differential)
@@ -872,53 +859,76 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile, AllLoopList, 
 		namesvec <- c(namesvec, appendnamevec)
 		colnames(MergedIntTempData) <- namesvec
 
-		# write the data frame sequentially
-		if (valid_chr_count == 1) {
-			write.table(MergedIntTempData, UnionLoopFeatureFile, row.names=F, col.names=T, sep="\t", quote=F, append=F)	
-		} else {
-			write.table(MergedIntTempData, UnionLoopFeatureFile, row.names=F, col.names=F, sep="\t", quote=F, append=T)	
+		write.table(MergedIntTempData, temp_final_UnionLoopFile, row.names=F, col.names=T, sep="\t", quote=F, append=F)
+
+		# delete the temporary file
+		if (file.exists(UnionLoopTempFile1) == TRUE) {
+			system(paste("rm", UnionLoopTempFile1))
 		}
-	} 	# end chromosome index loop
 
-	# delete the temporary file
-	if (file.exists(UnionLoopTempFile1) == TRUE) {
-		system(paste("rm", UnionLoopTempFile1))
+		# delete the temporary file
+		if (file.exists(InpTempChIPCoverageFile) == TRUE) {
+			system(paste("rm", InpTempChIPCoverageFile))
+		}
+
+		# delete the temporary file
+		if (file.exists(InpTempFitHiChIPLoopFile) == TRUE) {
+			system(paste("rm", InpTempFitHiChIPLoopFile))
+		}
+
+	}) 	# end chromosome index loop
+
+	## finally merge the results to the final output file
+	for (chr_idx in (1:length(CHRLIST))) {
+		chrName <- CHRLIST[chr_idx]
+		temp_final_UnionLoopFile <- paste0(dirname(UnionLoopFile), '/temp_mastersheet_', chrName, '.bed')
+		if (chr_idx == 1) {
+			system(paste("cat", temp_final_UnionLoopFile, " > ", UnionLoopFeatureFile))
+		} else {
+			system(paste0("awk \'(NR>1)\' ", temp_final_UnionLoopFile, " >> ", UnionLoopFeatureFile))
+		}
+		## remove the temporary file
+		system(paste("rm", temp_final_UnionLoopFile))
 	}
 
-	## remve temporary objects
-	if (exists("MergedIntTempData")) {
-		rm("MergedIntTempData")
-	}	
-	if (exists("AllLoop_BinDF")) {
-		rm("AllLoop_BinDF")
+	if (file.exists(tempchrfile)) {
+		system(paste("rm", tempchrfile))
 	}
-	if (exists("RawCC_Categ")) {
-		rm("RawCC_Categ")
-	}
-	if (exists("QVal_Categ")) {
-		rm("QVal_Categ")
-	}
-	if (exists("InpTempData")) {
-		rm("InpTempData")
-	}
-	if (exists("mergeDF")) {
-		rm("mergeDF")
-	}
-	if (exists("rawccvec")) {
-		rm("rawccvec")
-	}
-	if (exists("qvec")) {
-		rm("qvec")
-	}
-	if (exists("Seg1_ChIP_Coverage")) {
-		rm("Seg1_ChIP_Coverage")
-	}
-	if (exists("Seg2_ChIP_Coverage")) {
-		rm("Seg2_ChIP_Coverage")
-	}
-	if (exists("ChIPCoverageData")) {
-		rm("ChIPCoverageData")
-	}
+
+	# ## remve temporary objects
+	# if (exists("MergedIntTempData")) {
+	# 	rm("MergedIntTempData")
+	# }	
+	# if (exists("AllLoop_BinDF")) {
+	# 	rm("AllLoop_BinDF")
+	# }
+	# if (exists("RawCC_Categ")) {
+	# 	rm("RawCC_Categ")
+	# }
+	# if (exists("QVal_Categ")) {
+	# 	rm("QVal_Categ")
+	# }
+	# if (exists("InpTempData")) {
+	# 	rm("InpTempData")
+	# }
+	# if (exists("mergeDF")) {
+	# 	rm("mergeDF")
+	# }
+	# if (exists("rawccvec")) {
+	# 	rm("rawccvec")
+	# }
+	# if (exists("qvec")) {
+	# 	rm("qvec")
+	# }
+	# if (exists("Seg1_ChIP_Coverage")) {
+	# 	rm("Seg1_ChIP_Coverage")
+	# }
+	# if (exists("Seg2_ChIP_Coverage")) {
+	# 	rm("Seg2_ChIP_Coverage")
+	# }
+	# if (exists("ChIPCoverageData")) {
+	# 	rm("ChIPCoverageData")
+	# }
 	gc()	
 
 }	# end function
@@ -971,7 +981,8 @@ GetCntNumRepVec <- function(IntDF, CCCols, QValCols, FDR_thr_Loop=0.01) {
 ## Inp_DiffModel: 0: use all loops, 1: use distance stratification
 ## suffixStr: suffix string at the plot files
 #===============
-Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile, DESeq_ResFile, Inp_DiffModel, suffixStr, FDR_Th_DESeq) {
+Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile, 
+							DESeq_ResFile, Inp_DiffLoopModel, DistStrat, suffixStr, FDR_Th_DESeq) {
 
 	CountDataColNames <- colnames(CountData)
 
@@ -984,10 +995,13 @@ Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile,
 	## write the DESeq2 copatible condition file
 	InpTableData <- data.table::fread(InpTableFile, header=T)
 	if (ncol(InpTableData) > 2) {
-		coldata <- cbind.data.frame(data.frame(Name=CountDataColNames), InpTableData[, c(2:ncol(InpTableData))])
-		colnames(coldata) <- c("Name", "Condition", paste0("Covariate_", seq(1, (ncol(coldata)-2))))
+		coldata <- cbind.data.frame(data.frame(Name=CountDataColNames), 
+									InpTableData[, c(2:ncol(InpTableData))])
+		colnames(coldata) <- c("Name", "Condition", 
+								paste0("Covariate_", seq(1, (ncol(coldata)-2))))
 	} else {
-		coldata <- cbind.data.frame(data.frame(Name=CountDataColNames), InpTableData[, 2])
+		coldata <- cbind.data.frame(data.frame(Name=CountDataColNames), 
+									InpTableData[, 2])
 		colnames(coldata) <- c("Name", "Condition")
 	}
 	write.table(coldata, SampleInfoFile, row.names=F, col.names=T, sep="\t", quote=F, append=F)
@@ -1013,7 +1027,9 @@ Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile,
 
 	# Note: only one factor, namely the category information, is used to generate design matrix
 	#design= ~ Condition + Type	
-	dds <- DESeqDataSetFromMatrix(countData=CountData, colData=coldata, design=formula(formula_str))
+	dds <- DESeqDataSetFromMatrix(countData=CountData, 
+									colData=coldata, 
+									design=formula(formula_str))
 
 	cat(sprintf("\n ********** performing DESeq on dds ********** \n"))
 
@@ -1037,49 +1053,54 @@ Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile,
 
 		## commented - sourya
 		if (0) {
-
-		# also plot dispersion estimates 
-		DispEstPlotFile <- paste0(PlotDir, '/Dispersion_Estimate_Plot_', suffixStr, '.pdf')
-		pdf(DispEstPlotFile, width=8, height=6)
-		DESeq2::plotDispEsts(ddsMF)
-		dev.off()
-
+			# also plot dispersion estimates 
+			DispEstPlotFile <- paste0(PlotDir, '/Dispersion_Estimate_Plot_', suffixStr, '.pdf')
+			pdf(DispEstPlotFile, width=8, height=6)
+			DESeq2::plotDispEsts(ddsMF)
+			dev.off()
 		}	# end if
 
 		## default DESEQ results
 		cat(sprintf("\n ********** DESeq results - contrast"))
 		## check https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#indfilt
-		DESEQRes <- DESeq2::results(ddsMF, parallel=T, independentFiltering=FALSE, contrast=c('Condition', CategoryList[1], CategoryList[2]))
+		DESEQRes <- DESeq2::results(ddsMF, parallel=T, 
+									independentFiltering=FALSE, 
+									contrast=c('Condition', CategoryList[1], CategoryList[2]))
 
 		## commented - sourya
 		if (0) {
-
-		## MA plot using DEseq results
-		MAPlotFile <- paste0(PlotDir, '/MA_Plot_', suffixStr, '.pdf')
-		pdf(MAPlotFile, width=8, height=6)
-		# DESeq2::plotMA(DESEQRes, ylim=c((-1) * FOLD_Change_Thr, FOLD_Change_Thr), xlim=c(1,10000), main=methodstr)
-		DESeq2::plotMA(DESEQRes, main='MA_Plot')
-		dev.off()
-
+			## MA plot using DEseq results
+			MAPlotFile <- paste0(PlotDir, '/MA_Plot_', suffixStr, '.pdf')
+			pdf(MAPlotFile, width=8, height=6)
+			# DESeq2::plotMA(DESEQRes, ylim=c((-1) * FOLD_Change_Thr, FOLD_Change_Thr), xlim=c(1,10000), main=methodstr)
+			DESeq2::plotMA(DESEQRes, main='MA_Plot')
+			dev.off()
 		}	# end if 
 
 		## selective fields - so that DESeq2 and EdgeR outputs have similar format
-		FinalDESEQRes <- cbind.data.frame(DESEQRes$log2FoldChange, DESEQRes$baseMean, DESEQRes$pvalue, DESEQRes$padj)
+		FinalDESEQRes <- cbind.data.frame(DESEQRes$log2FoldChange, 
+											DESEQRes$baseMean, 
+											DESEQRes$pvalue, 
+											DESEQRes$padj)
 		colnames(FinalDESEQRes) <- c('logFC', 'baseMean', 'pvalue', 'FDR')
 
 		##==================
 		## perform IHW if distance stratification is not employed
 		##==================
-		if (Inp_DiffModel == 0) {
+		if (DistStrat == 0) {
 
 			## diagnostic plot showing the utility of "baseMean" as a covariate
 			Covariate_Plotfile <- paste0(PlotDir, '/pValue_vs_baseMean_', suffixStr, '.png')
-			dataDF <- data.frame(pvalue = DESEQRes$pvalue, covariate = rank(DESEQRes$baseMean)/nrow(DESEQRes), covariate_type="baseMean") 
+			dataDF <- data.frame(pvalue = DESEQRes$pvalue, 
+									covariate = rank(DESEQRes$baseMean)/nrow(DESEQRes), covariate_type="baseMean") 
 			p <- ggplot(dataDF, aes(x = covariate, y = -log10(pvalue))) + geom_hex(bins = 100) + facet_grid( . ~ covariate_type) + ylab(expression(-log[10]~p))
 			ggsave(Covariate_Plotfile, plot = p, width=6, height=6)
 
 			## compute weighted p-values using covariate "baseMean" - use IHW 
-			ihwRes <- as.data.frame(IHW::ihw(pvalues=FinalDESEQRes$pvalue, covariates=FinalDESEQRes$baseMean, alpha=FDR_Th_DESeq))	#0.1
+			ihwRes <- as.data.frame(
+						IHW::ihw(pvalues=FinalDESEQRes$pvalue, 
+						covariates=FinalDESEQRes$baseMean, 
+						alpha=FDR_Th_DESeq))	#0.1
 			## append the adjusted p-value from IHW in the DESeq2 results
 			FinalDESEQRes$FDR_IHW <- ihwRes$adj_pvalue
 		}		
@@ -1198,7 +1219,7 @@ Categorize_ExclusiveLoops <- function(MainOutDir, InpLoopFile, CategoryList, QVa
 # function to categorize the differential loops according to the 
 # ChIP-seq differential coverage information
 #===============================
-Categorize_DiffLoops <- function(MainOutDir, InpLoopFile, CategoryList, QVal_ColList, UseDESeq2, EdgeRModel, HiC_Data_Process, CovThr, UpDownLoops=1) {
+Categorize_DiffLoops <- function(MainOutDir, InpLoopFile, CategoryList, QVal_ColList, DiffLoopModel, HiC_Data_Process, CovThr, UpDownLoops=1) {
 
 	ConvertLoopsWashU(InpLoopFile, QVal_ColList)
 	
@@ -1210,8 +1231,8 @@ Categorize_DiffLoops <- function(MainOutDir, InpLoopFile, CategoryList, QVal_Col
 
 		## for edgeR + exactTest model, fold change < 0 means first category is upregulated 
 		## otherwise, for all other edgeR and for DESeq2, fold change > 0 means first category is upregulated 
-		if ((UseDESeq2 == 0) & (EdgeRModel == 0)) {
-			## EdgeR with exactTest
+		if (DiffLoopModel == 1) {
+			## edgeR with exactTest
 			system(paste0("awk \'((NR==1) || ($(NF-6)>0))\' ", InpLoopFile, " > ", UpReg_Cat2_File))
 			system(paste0("awk \'((NR==1) || ($(NF-6)<0))\' ", InpLoopFile, " > ", UpReg_Cat1_File))			
 		} else {
@@ -1369,7 +1390,7 @@ Create_EdgeR_Compatible_Count_Matrix <- function(MasterSheetData, RawCC_ColList,
 ## inp_suffixStr: suffix string
 ## bcv: by default 0.4 
 #===================
-Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoFile, EdgeRModel, EdgeR_ResFile, Inp_DiffModel, suffixStr, FDR_Th_DESeq, bcv=0.4) {
+Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoFile, EdgeR_ResFile, Inp_DiffLoopModel, DistStrat, suffixStr, FDR_Th_DESeq, bcv=0.4) {
 
 	## reset
 	if (file.exists(EdgeR_ResFile)) {
@@ -1407,200 +1428,243 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 	# create the EdgeR count data structure (7th column onwards)
 	y <- DGEList(counts=CountData, group=Group)
 
+	# ## Remove rows conssitently have zero or very low counts
+	# keep <- filterByExpr(y)
+	# y <- y[keep, keep.lib.sizes = FALSE]
+
 	# for data with multiple replicates, better to normalize the DGEList object
-	if ((ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
-		y <- calcNormFactors(y)
+	# if ((ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+	if (1) {
+		y <- calcNormFactors(y, method="TMM")
 	}
-		
-	tryCatch({    			
-		# Estimate Common, Trended and Tagwise Negative Binomial dispersions 
-		# by weighted likelihood empirical Bayes
-		y <- estimateDisp(y, design)		
-	}, error=function(cond) {		
-        cat(sprintf("\n\n ****** edgeR model - estimateDisp - error **** \n"))
+	
+	if (Inp_DiffLoopModel >= 1 & Inp_DiffLoopModel <= 3) {
+		##=======
+		## for edgeR exactTest or GLM models, estimate the dispersions
+		##=======
+		tryCatch({    			
+			# Estimate Common, Trended and Tagwise Negative Binomial dispersions 
+			# by weighted likelihood empirical Bayes
+			y <- estimateDisp(y, design)		
+		}, error=function(cond) {		
+			cat(sprintf("\n\n ****** edgeR model - estimateDisp - error **** \n"))
+		})
 
-    })
-
-	## according to the input "EdgeRModel"
-	## estimate dispersions, tags, and significance
-	if (EdgeRModel == 0) {	
-		## exact test - experiments with single factor - qCML method
-		## check the number of replicates in both categories for estimating dispersions
-		## comparison between two categories (Category 1 - Category 2)	
-		if (exists("y")) {
-			tryCatch({			
+		## according to the input "Inp_DiffLoopModel" (i.e. exactTest or GLM model specification)
+		## estimate dispersions, tags, and significance
+		if (Inp_DiffLoopModel == 1) {	
+			## exact test - experiments with single factor - qCML method
+			## check the number of replicates in both categories for estimating dispersions
+			## comparison between two categories (Category 1 - Category 2)	
+			if (exists("y")) {
+				tryCatch({			
+					if ((ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+						edgeR_model <- exactTest(y, dispersion="trended", pair=c(CategoryList[1], CategoryList[2]))
+					} else {		
+						## if at least one of the input categories do not have multiple replicates
+						## we manually supply the dispersion
+						edgeR_model <- exactTest(y, dispersion=bcv^2, pair=c(CategoryList[1], CategoryList[2]))
+					}
+				}, error=function(cond) {		
+					cat(sprintf("\n\n ****** edgeR model - exactTest - error **** \n"))
+				})				
+			}
+		} else if (Inp_DiffLoopModel == 3) {
+			tryCatch({
+				## quasi-likelihood F-tests using GLM
 				if ((ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
-					edgeR_model <- exactTest(y, dispersion="trended", pair=c(CategoryList[1], CategoryList[2]))
-				} else {			
-					edgeR_model <- exactTest(y, dispersion=bcv^2, pair=c(CategoryList[1], CategoryList[2]))
+					fit_model <- glmQLFit(y, design)
+				} else {
+					## if at least one of the input categories do not have multiple replicates
+					## we manually supply the dispersion
+					fit_model <- glmQLFit(y, design, dispersion=bcv^2)
 				}
 			}, error=function(cond) {		
-				cat(sprintf("\n\n ****** edgeR model - exactTest - error **** \n"))
-	    	})				
-		}
-	} else if (EdgeRModel == 1) {
-		tryCatch({
-			## quasi-likelihood F-tests using GLM
-			fit_model <- glmQLFit(y, design)	
-		}, error=function(cond) {		
-	        cat(sprintf("\n\n ****** edgeR model - glmQLFit - error **** \n"))
-	    })			
-		## explicitly specify the contrast argument
-		## comparison between two categories (Category 1 - Category 2)	
-		if (exists("fit_model")) {
-			tryCatch({		
-				edgeR_model <- glmQLFTest(fit_model, contrast=c(1, -1))
+				cat(sprintf("\n\n ****** edgeR model - glmQLFit - error **** \n"))
+			})			
+			## explicitly specify the contrast argument
+			## comparison between two categories (Category 1 - Category 2)	
+			if (exists("fit_model")) {
+				tryCatch({		
+					edgeR_model <- glmQLFTest(fit_model, contrast=c(1, -1))
+				}, error=function(cond) {		
+					cat(sprintf("\n\n ****** edgeR model - glmQLFTest - error **** \n"))
+				})
+			}
+		} else if (Inp_DiffLoopModel == 2) {
+			tryCatch({
+				# likelihood ratio tests (LRT) using GLM
+				if ((ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+					fit_model <- glmFit(y, design)
+				} else {
+					## if at least one of the input categories do not have multiple replicates
+					## we manually supply the dispersion
+					fit_model <- glmFit(y, design, dispersion=bcv^2)
+				}
 			}, error=function(cond) {		
-				cat(sprintf("\n\n ****** edgeR model - glmQLFTest - error **** \n"))
-	    	})
-		}
-	} else if (EdgeRModel == 2) {
-		tryCatch({
-			## quasi-likelihood F-tests using GLM		
-			fit_model <- glmQLFit(y, design)	
-		}, error=function(cond) {		
-	        cat(sprintf("\n\n ****** edgeR model - glmQLFit - error **** \n"))
-	    })						
-		## employ TREAT condition
-		## get genes having log fold change > 1
-		## explicitly specify the contrast argument
-		## comparison between two categories (Category 1 - Category 2)	
-		if (exists("fit_model")) {
-			tryCatch({	
-				edgeR_model <- glmTreat(fit_model, contrast=c(1, -1), lfc=1)
-			}, error=function(cond) {		
-				cat(sprintf("\n\n ****** edgeR model - glmTreat - error **** \n"))
-	    	})
-		}
-	} else if (EdgeRModel == 3) {
-		tryCatch({
-			# likelihood ratio tests (LRT) using GLM
-			fit_model <- glmFit(y, design)
-		}, error=function(cond) {		
-	        cat(sprintf("\n\n ****** edgeR model - glmFit - error **** \n"))
-	    })			
-		## explicitly specify the contrast argument
-		## comparison between two categories (Category 1 - Category 2)			
-		if (exists("fit_model")) {				
-			tryCatch({	
-				edgeR_model <- glmLRT(fit_model, contrast=c(1, -1))	
-			}, error=function(cond) {		
-				cat(sprintf("\n\n ****** edgeR model - glmLRT - error **** \n"))
-	    	})
-		}
-	} else if (EdgeRModel == 4) {
-		tryCatch({
-			# likelihood ratio tests (LRT) using GLM
-			fit_model <- glmFit(y, design)
-		}, error=function(cond) {		
-	        cat(sprintf("\n\n ****** edgeR model - glmFit - error **** \n"))
-	    })				
-		## employ TREAT condition
-		## get genes having log fold change > 1		
-		## explicitly specify the contrast argument
-		## comparison between two categories (Category 1 - Category 2)			
-		if (exists("fit_model")) {	
-			tryCatch({		
-				edgeR_model <- glmTreat(fit_model, contrast=c(1, -1), lfc=1)	
-			}, error=function(cond) {		
-				cat(sprintf("\n\n ****** edgeR model - glmTreat - error **** \n"))
-	    	})	
-		}
-	} 
+				cat(sprintf("\n\n ****** edgeR model - glmFit - error **** \n"))
+			})			
+			## explicitly specify the contrast argument
+			## comparison between two categories (Category 1 - Category 2)			
+			if (exists("fit_model")) {				
+				tryCatch({	
+					edgeR_model <- glmLRT(fit_model, contrast=c(1, -1))	
+				}, error=function(cond) {		
+					cat(sprintf("\n\n ****** edgeR model - glmLRT - error **** \n"))
+				})
+			}
+		} 
 
-	## get the DE genes 
-	## will be used for MA plot
-	## and also the final results
-	if (exists("edgeR_model")) {	
-		edgeR_model_tags <- topTags(edgeR_model)
+		## get the DE genes 
+		## will be used for MA plot
+		## and also the final results
+		if (exists("edgeR_model")) {	
+			edgeR_model_tags <- topTags(edgeR_model)
+		}
+
+		##===== plot statistics
+		if (exists("y") & (ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+
+			## commented - sourya
+			if (0) {
+
+				## 1. plotMDS function
+				## generates a plot in which distances between samples 
+				## correspond to leading biological coefficient of variation (BCV) between those samples
+				if (Inp_DiffLoopModel == 1) {		
+					MDSPlotFile <- paste0(PlotDir, '/EdgeR_MDS_Plot_', suffixStr, '.pdf')
+					pdf(MDSPlotFile, width=8, height=6)
+					plotMDS(y)
+					dev.off()
+				}
+
+				## 2. plotBCV function
+				## dispersion estimates can be viewed in a BCV plot
+				if (Inp_DiffLoopModel == 1) {		
+					BCVPlotFile <- paste0(PlotDir, '/EdgeR_BCV_Plot_', suffixStr, '.pdf')
+					pdf(BCVPlotFile, width=8, height=6)
+					plotBCV(y)
+					dev.off()
+				}
+
+				## 3. plotMD function
+				## applicable when both cateopries have multiple replicates
+				## Plot log-fold change against log-counts per million, with DE genes highlighted	
+				MDPLotFile <- paste0(PlotDir, '/EdgeR_MD_Plot_', suffixStr, '.pdf')
+				pdf(MDPLotFile, width=8, height=6)
+				plotMD(edgeR_model, hl.cex = 0.1)
+				abline(h=c(-1, 1), col="blue")
+				dev.off()
+
+				## 4. plotSmear function
+				## smear plot - MA for groups of samples
+				SmearPlotFile <- paste0(PlotDir, '/EdgeR_Smear_Plot_', suffixStr, '.pdf')
+				pdf(SmearPlotFile, width=8, height=6)
+				plotSmear(edgeR_model, pair=c(CategoryList[1], CategoryList[2]), de.tags=edgeR_model_tags)
+				dev.off()
+
+				## 5. plotQLDisp function
+				## plot the QL dispersions
+				## using output from glmQLFit function
+				if (Inp_DiffLoopModel == 3) {
+					QLDispersionPlotFile <- paste0(PlotDir, '/EdgeR_QL_Dispersion_Plot_', suffixStr, '.pdf')
+					pdf(QLDispersionPlotFile, width=8, height=6)
+					plotQLDisp(fit_model)
+					dev.off()
+				}
+
+			} 	# end if 	
+		}
+
+		#===============
+		# for each of the DE tag finding techniques (qCML or CR methods)
+		# convert the p-values to the corresponding q-values, using BH correction
+		#===============
+		if (exists("edgeR_model")) {	
+			QVal <- p.adjust(edgeR_model$table$PValue, method = "BH")
+			EdgeRRes <- cbind.data.frame(edgeR_model$table$logFC, edgeR_model$table$logCPM, edgeR_model$table$PValue, QVal)		
+			colnames(EdgeRRes) <- c('logFC', 'logCPM', 'pvalue', 'FDR')
+		}
+
+	} else if (Inp_DiffLoopModel == 4) {
+		##=======
+		## for Wilcoxon rank sum test on edgeR TMM normalized data
+		##=======
+		time_val1 = Sys.time()
+
+		## get counts-per-million (cpm)
+		count_norm <- as.data.frame(cpm(y))
+		
+		## get average log CPM for each row
+		avglogCPMVal <- edgeR::aveLogCPM(y)
+
+		time_val2 = Sys.time()
+		cat(sprintf("\n Start of Wilcoxon test p-value computation - time elapsed : %s \n", (time_val2 - time_val1)))
+
+		ncore <- detectCores()
+
+		## Run the Wilcoxon rank-sum test for each entry
+		pvalues_list <- parallel:::mclapply( 1:nrow(count_norm), mc.cores = ncore, function(i) {
+		# pvalues <- sapply( 1:nrow(count_norm), function(i) {
+		
+			data <- cbind.data.frame(loop = as.numeric(t(count_norm[i,])), Group)
+			p <- wilcox.test(loop~Group, data)$p.value
+			return(p)
+		})
+
+		## as mclapply returns a list, we need to unlist to get the vector of p-values
+		pvalues = unlist(pvalues_list)
+
+		time_val3 = Sys.time()
+		cat(sprintf("\n End of Wilcoxon test p-value computation - time elapsed : %s \n", (time_val3 - time_val2)))
+
+		## calculate FDR (using BH correction)
+		fdrval <- p.adjust(pvalues, method = "BH")
+
+		time_val4 = Sys.time()
+		cat(sprintf("\n FDR of Wilcoxon test p-value computation - time elapsed : %s \n", (time_val4 - time_val3)))
+
+		## Calculate the fold-change for each loop
+		conditionsLevel <- levels(Group)
+		dataCon1 <- count_norm[,c(which(Group==conditionsLevel[1]))]
+		dataCon2 <- count_norm[,c(which(Group==conditionsLevel[2]))]
+		logFCVal <- log2((rowMeans(dataCon2) + 1) / (rowMeans(dataCon1) + 1))
+
+		EdgeRRes <- data.frame(logFC=logFCVal, logCPM=avglogCPMVal, pvalue=pvalues, FDR=fdrval)
 	}
 
-	##===== plot statistics
-	if (exists("y") & (ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+	if (exists("EdgeRRes")) {
 
-		## commented - sourya
-		if (0) {
-
-		## 1. plotMDS function
-		## generates a plot in which distances between samples 
-		## correspond to leading biological coefficient of variation (BCV) between those samples
-		if (EdgeRModel == 0) {		
-			MDSPlotFile <- paste0(PlotDir, '/EdgeR_MDS_Plot_', suffixStr, '.pdf')
-			pdf(MDSPlotFile, width=8, height=6)
-			plotMDS(y)
-			dev.off()
-		}
-
-		## 2. plotBCV function
-		## dispersion estimates can be viewed in a BCV plot
-		if (EdgeRModel == 0) {		
-			BCVPlotFile <- paste0(PlotDir, '/EdgeR_BCV_Plot_', suffixStr, '.pdf')
-			pdf(BCVPlotFile, width=8, height=6)
-			plotBCV(y)
-			dev.off()
-		}
-
-		## 3. plotMD function
-		## applicable when both cateopries have multiple replicates
-		## Plot log-fold change against log-counts per million, with DE genes highlighted	
-		MDPLotFile <- paste0(PlotDir, '/EdgeR_MD_Plot_', suffixStr, '.pdf')
-		pdf(MDPLotFile, width=8, height=6)
-		plotMD(edgeR_model, hl.cex = 0.1)
-		abline(h=c(-1, 1), col="blue")
-		dev.off()
-
-		## 4. plotSmear function
-		## smear plot - MA for groups of samples
-		SmearPlotFile <- paste0(PlotDir, '/EdgeR_Smear_Plot_', suffixStr, '.pdf')
-		pdf(SmearPlotFile, width=8, height=6)
-		plotSmear(edgeR_model, pair=c(CategoryList[1], CategoryList[2]), de.tags=edgeR_model_tags)
-		dev.off()
-
-		## 5. plotQLDisp function
-		## plot the QL dispersions
-		## using output from glmQLFit function
-		if ((EdgeRModel == 1) | (EdgeRModel == 2)) {
-			QLDispersionPlotFile <- paste0(PlotDir, '/EdgeR_QL_Dispersion_Plot_', suffixStr, '.pdf')
-			pdf(QLDispersionPlotFile, width=8, height=6)
-			plotQLDisp(fit_model)
-			dev.off()
-		}
-
-		} 	# end if 	
-	}
-
-	# get log-counts-per-million (cpm)
-	if (0) {
-		logcpm <- cpm(y, prior.count=2, log=TRUE)
-	}
-
-	#===============
-	# for each of the DE tag finding techniques (qCML or CR methods)
-	# convert the p-values to the corresponding q-values, using BH correction
-	#===============
-	if (exists("edgeR_model")) {	
-		QVal <- p.adjust(edgeR_model$table$PValue, method = "BH")
-		EdgeRRes <- cbind.data.frame(edgeR_model$table$logFC, edgeR_model$table$logCPM, edgeR_model$table$PValue, QVal)		
-		colnames(EdgeRRes) <- c('logFC', 'logCPM', 'pvalue', 'FDR')
-
-		##==================
 		## perform IHW if distance stratification is not employed
-		##==================
-		if ((Inp_DiffModel == 0) | (Inp_DiffModel == 2)) {
+		if (DistStrat == 0) {
 			## diagnostic plot showing the utility of "logCPM" as a covariate
 			Covariate_Plotfile <- paste0(PlotDir, '/pValue_vs_logCPM_', suffixStr, '.png')
-			dataDF <- data.frame(pvalue = EdgeRRes$pvalue, covariate = rank(EdgeRRes$logCPM)/nrow(EdgeRRes), covariate_type="logCPM") 
+			dataDF <- data.frame(pvalue = EdgeRRes$pvalue, 
+								covariate = rank(EdgeRRes$logCPM)/nrow(EdgeRRes), 
+								covariate_type="logCPM") 
 			p <- ggplot(dataDF, aes(x = covariate, y = -log10(pvalue))) + geom_hex(bins = 100) + facet_grid( . ~ covariate_type) + ylab(expression(-log[10]~p))
 			ggsave(Covariate_Plotfile, plot = p, width=6, height=6)		
 
 			## compute weighted p-values using covariate "logCPM" - use IHW
-			ihwRes <- as.data.frame(IHW::ihw(pvalues=EdgeRRes$pvalue, covariates=EdgeRRes$logCPM, alpha=FDR_Th_DESeq))	#0.1
+			ihwRes <- as.data.frame(IHW::ihw(pvalues=EdgeRRes$pvalue, 
+				covariates=EdgeRRes$logCPM, alpha=FDR_Th_DESeq))
 			## append the adjusted p-value from IHW in the edgeR results
 			EdgeRRes$FDR_IHW <- ihwRes$adj_pvalue
 		}
+
+		# ## As the "EdgeRRes" contains only the filtered entries from "filterByExpr"
+		# ## generate the complete results
+		# df1 <- data.frame(idx=seq(1,nrow(CountData)))
+		# EdgeRRes$idx <- which(keep == TRUE)
+		# cat(sprintf("\n length df1 idx : %s length EdgeRRes idx : %s ", length(df1$idx), length(EdgeRRes$idx)))
+		# FinalEdgeRRes <- dplyr::full_join(df1, EdgeRRes)
+		
+		# ## drop the idx column
+		# FinalEdgeRRes <- subset(FinalEdgeRRes, select = -c(idx))
 		
 		## write the edgeR results
 		write.table(EdgeRRes, EdgeR_ResFile, row.names=F, col.names=T, quote=F, sep="\t", append=F)		
+
 	}
 
 	## remove temporary objects
@@ -1618,6 +1682,12 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 	}
 	if (exists("edgeR_model_tags")) {
 		rm("edgeR_model_tags")
+	}
+	if (exists("EdgeRRes")) {
+		rm("EdgeRRes")
+	}
+	if (exists("FinalEdgeRRes")) {
+		rm("FinalEdgeRRes")
 	}
 	gc()
 	
