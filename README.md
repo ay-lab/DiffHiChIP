@@ -10,6 +10,8 @@ Sourya Bhattacharyya (sourya@lji.org)
 
 Daniela Salgado Figueroa (dsfigueroa@lji.org)
 
+Ferhat Ay (ferhatay@lji.org)
+
 
 Description (and Novelty)
 ==========================
@@ -68,74 +70,114 @@ Usage: DiffLoop_Code_FitHiChIP.r [options]
 
 Options:
 	
-	--AllLoopList=ALLLOOPLIST
-		Comma or colon separated list of loop files of all categories and all replicates. Loop files without any FDR thresholding (i.e. having all loops) should be provided. For example, considering FitHiChIP, files $PREFIX$*.interactions.FitHiC.bed should be provided. Loop files for the first category are to be mentioned first, followed by those of second category. For example, suppose there are two replicates for each category. Then, the file list would be like Cat1_Repl1_File:Cat1_Repl2_File:Cat2_Repl1_File:Cat2_Repl2_File where, Cat1 denotes input category 1, and Repl1 means replicate 1, and so on. Loop files can be gzipped as well. All the loops in all files should have equal resolution (bin size). Mandatory parameter.
-
-	--ChrSizeFile=CHRSIZEFILE
-		File containing size of chromosomes for reference genome. Mandatory parameter.
-
-	--MidList=MIDLIST
-		Boolean values (0/1) where 1 means midpoints of each bin are specified, rather than the bin interval. If a single value is provided, all of the input files are assumed to have the same property. Otherwise, if different input files have different configuration, user needs to specify a Comma or colon separated list of boolean values. The list should have equal length as the --AllLoopList parameter, and order of input files should be similar as --AllLoopList parameter. Default: list of all zeroes (means bin interval is provided for all the files).
-
-	--BinSize=BINSIZE
-		Applicable if all the entries in --MidList option is 1, that is all input files contain only midpoints. In such a case, user needs to specify the bin size of input loops. Mandatory parameter in such a case. Default = 0
-
-	--CCColList=CCCOLLIST
-		Comma or colon separated list of integers depicting the column numbers of individual input files, which contain the raw contact counts. If all the input files have similar settings, user may just specify one number, which will be applied to all the files. Default = 7, same as FitHiChIP output format.
-
-	--QColList=QCOLLIST
-		Comma or colon separated list of integers depicting the column numbers of individual input files, which contain the q-value (FDR). If all the input files have similar settings, user may just specify one number, which will be applied to all the files. Default is the last column for all the input loops, same as FitHiChIP output format.
-
-	--FDRThr=FDRTHR
-		FDR (q-value) threshold used for determining HiC or HiChIP significant loops. Default = 0.01.
+	--InpTable=INPTABLE
+		Input table file with loop file, covariate information. Default = NULL. Mandatory parameter.
 
 	--OutDir=OUTDIR
 		Base Output directory. Mandatory parameter.
 
-	--CategoryList=CATEGORYLIST
-		Comma or colon separated list of strings, corresponding to the two main categories (whose replicates are present). Default: Category1, Category2.
+	--ChrSizeFile=CHRSIZEFILE
+		Chromosome size file corresponding to reference genome. Mandatory parameter.
 
-	--ReplicaCount=REPLICACOUNT
-		Comma or colon separated list of the count of replicates for individual categories. Default: 1,1 (means that we are considering one replicate per sample).
+	--MidList=MIDLIST
+		Comma or colon separated list of boolean values (0/1) corresponding to the input loop files. 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						1: loop file has midpoints of each bin 
+						0: loop file has bin interval (chr, start, end). 
+						Instead of a list, a single value (0 or 1) can also be provided. 
+						In such a case, all files will be assumed to have the same configuration. 
+						Default: list of all zeroes (means all loop files have bin interval information).
 
-	--ReplicaLabels1=REPLICALABELS1
-		Comma or colon separated list of the label of replicates for the first category. Default: R1,R2, etc.
+	--BinSize=BINSIZE
+		Bin size / resolution of the input loops. 
+					Used only if all the entries in --MidList option is 1, thus all loop files contain only midpoints of the bin intervals. Mandatory parameter in such a case. Default = 5000 means 5 Kb.
 
-	--ReplicaLabels2=REPLICALABELS2
-		Comma or colon separated list of the label of replicates for the second category. Default: R1,R2, etc.
+	--CCColList=CCCOLLIST
+		Comma or colon separated list of integers depicting the column numbers of the input loop files storing the raw contact count. 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						If all the input files have similar settings, user can specify only one value.
+						Default = 7, same as FitHiChIP output format.
 
-	--ChIPAlignFileList=CHIPALIGNFILELIST
-		Applicable only for HiChIP data processing. Comma or colon separated list of ChIP-seq alignment files. Either BAM or bedgraph formatted file is supported. Default is NULL. User can 1) either provide two files, one for each category, 2) or provide ChIP seq alignment files one for each sample. If this parameter is empty, HiC like processing is performed.
+	--QColList=QCOLLIST
+		Comma or colon separated list of integers depicting the column numbers of the input loop files storing the q-value (FDR). 
+						The list should have equal length as the --AllLoopList parameter.
+						The order should be same as the files mentioned in the --AllLoopList parameter.
+						If all the input files have similar settings, user can specify only one value.
+						Default is the last column, same as FitHiChIP output format.
 
-	--CovThr=COVTHR
-		Applicable only for HiChIP data processing. Threshold signifying the max allowed deviation of ChIP coverage between two categories, to consider those bins as 1D invariant (ND). Default (or if user specifies value <=0 or > 100) is 25, means 25% deviation is set as maximum. If user chooses 50, 50% maximum ChIP seq coverage deviation would be allowed.
+	--FDRThr=FDRTHR
+		FDR (q-value) threshold used for determining Hi-C or HiChIP significant loops. Default = 0.01.
 
-	--DiffModel=DIFFMODEL
-		Differential loop model. Possible values are: [0]: Use complete set of loops, and report FDR and IHW corrected FDR. [1]: Use distance stratification (equal occupancy binning, based on the bin size specified). [2]: Differential loops per chromosome, useful for very large number of input loops. Default = 0.
-
-	--DSBinSize=DSBINSIZE
-		Applicable if the parameter --DiffModel is 1. Specifies the bin size (in bytes) employed for stratification. Default = 10000 means 10 Kb is the equal occupancy bin size.
-
-	--UseDESeq2=USEDESEQ2
-		If specified 1, uses DESeq2 to find the differential loops, provided that the input data has replicates in both categories. Default = 0, means edgeR is used to find the differential loops.
-
-	--EdgeRModel=EDGERMODEL
-		The exact statistical model to be employed for EdgeR (if used). Values are: [0] - exact Test, [1] - Quasi-likelihood (QL) F-Test (glmQLFit + glmQLFTest), [2] - (glmQLFit + glmTreat), [3] - likelihood ratio tests (glmFit + glmLRT), [4] - (glmFit + glmTreat). Default = 0. *** Note: values 1 to 4 are applicable only when both input categories have multiple replicates.
+	--Model=MODEL
+		Differential analysis model.
+						0: DESeq2
+						1: edgeR exact Test
+						2: edgeR GLM with likelihood ratio tests (glmFit + glmLRT)
+						3: edgeR GLM with Quasi-likelihood (QL) F-Test (glmQLFit + glmQLFTest)
+						4: Wilcoxon rank sum test on edgeR TMM normalized count
+						Default = 1
+						** Note: Models 0, 2, 3, are applicable if both categories have > 1 replicates.
 
 	--PreFilt=PREFILT
-		If 1, pre-filtered loops which are significant in at least one sample, are used as background. Otherwise (if 0) no such pre-filtering is done. Default = 0.
+		Binary value. 
+						0: all FitHiChIP loops from all samples are used as background.
+						1: Union of loops having FitHiChIP FDR < 0.1 in at least one input sample are used as background. 
+						Default = 0, means no filtering is done.
 
 	--DiffFDRThr=DIFFFDRTHR
-		FDR threshold for DESeq / EdgeR. Default is 0.05, means that loops with FDR < 0.05, and fold change >= log2(FoldChangeThr) would be considered as differential.
+		FDR threshold for differential loops. Default = 0.05
 
 	--LFCThr=LFCTHR
-		DESeq / EdgeR log2 fold change threshold. Default = 1.
+		log2 fold change threshold for differential loops. Default = 1.
+
+	--DistStrat=DISTSTRAT
+		Binary value. Possible values are: 
+				[0]: No distance stratification. Use FDR and IHW corrected FDR for differential analysis.
+				[1]: Use distance stratification (equal occupancy binning) and FDR. 
+				Default = 0, means no distance stratification is employed.
+
+	--DSBinSize=DSBINSIZE
+		Applicable if the parameter --DistStrat is 1. 
+						Specifies the bin size (in bytes) employed for stratification. 
+						Default = 10000 means 10 Kb is the equal occupancy bin size.
 
 	--bcv=BCV
-		If EdgeR is used with single samples (replica count = 1 for any of the categories), this value is the square-root-dispersion. For datasets arising from well-controlled experiments are 0.4 for human data, 0.1 for data on genetically identical model organisms, or 0.01 for technical replicates. For details, see the edgeR manual. By default, the value is set as 0.4.
+		If edgeR is used with one replicate in at least one input category, this value is the square-root-dispersion. 
+					For datasets arising from well-controlled experiments are 0.4 for human data, 
+					0.1 for data on genetically identical model organisms, 
+					or 0.01 for technical replicates. 
+					For details, see the edgeR manual. 
+					By default, the value is set as 0.4.
+
+	--ChIPAlignFileList=CHIPALIGNFILELIST
+		Applicable only for HiChIP data processing. 
+					Comma or colon separated list of ChIP-seq alignment files. 
+					Either BAM or bedgraph formatted file is supported. 
+					Default = NULL. 
+					User can: (a) either provide two files, one for each category, or 
+					(b) provide ChIP seq alignment files for each sample. 
+					If this parameter is empty, differential loops would be analyzed alright 
+					but their underlying 1D (ChIP) differences would not.
+
+	--CovThr=COVTHR
+		Applicable only for HiChIP data processing. 
+				Threshold signifying the maximum allowed deviation of ChIP coverage between two categories for which the bins would be considered as 1D invariant (ND). 
+				Default (or if user specifies value <=0 or > 100) = 25, 
+				means 25% deviation is set as maximum. 
+				If user chooses 50, 50% maximum ChIP seq coverage deviation would be allowed.
+
+	--SuffixStr=SUFFIXSTR
+		This custom string can be used to denote specific input conditions. 
+				Such as DESeq2_Covariate. 
+				If --Overwrite is 0, using different suffix strings would help to store outputs in different folders 
+				without re-computing majority of the differential analysis. 
+				Default = NULL.
 
 	--Overwrite=OVERWRITE
-		Binary variable. If 1, overwrites existing results. Default = 0.
+		Binary variable. If 1, overwrites existing results. 
+				Default = 0.
 
 	-h, --help
 		Show this help message and exit
@@ -146,45 +188,49 @@ Output description
 
 Within the mentioned output directory **OUTDIR**, the output differential loops are stored in the following directory structure, depending on the input parameters:
 
-${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}$/DiffLoops_ALL.bed
+$${\color{blue}BACKGROUND}/{\color{blue}STRAT}/{\color{green}MODEL}/{\color{brown}FDRTYPE}/**DiffLoops_ALL.bed**$$
 
 Details of the directory structure:
 
-${\color{blue}BACKGROUND}$: Denotes the background set of contacts employed for differential loop calling.
+$${\color{blue}BACKGROUND}$$: 
+
+Denotes the background set of contacts employed for differential loop calling.
 
 	1. If --PreFilt=0 (default), the directory name is *Background_AllContacts*. 
 
 	2. Otherwise, the folder name is *Background_FilteredContacts*.
 
-${\color{blue}STRAT}$: Denotes whether distance stratification is employed or not.
+$${\color{blue}STRAT}$$: 
 
-	1. If --DiffModel=0, no distance stratification is employed. The folder name is *DiffModel_0_AllLoops*. 
+Denotes whether distance stratification is employed or not.
 
-	2. Otherwise, for distance stratification (--DiffModel=1), the directory name is *DiffModel_1_DistStrat_{DSBINSIZE}* where *DSBINSIZE* is the bin size employed for stratification (see the parameter --DSBinSize)
+	1. If --DistStrat=0, no distance stratification is employed. The folder name is *No_DistStrat*. 
 
-${\color{green}MODEL}$: Specifies the differential analysis model.
+	2. Otherwise, for distance stratification (--DistStrat=1), the directory name is *With_DistStrat_{DSBINSIZE}* where *DSBINSIZE* is the bin size employed for stratification (see the parameter --DSBinSize)
 
-	1. If --UseDESeq2=1, DESeq2 is employed. The directory name is *DESeq2*
+$${\color{green}MODEL}$$: 
 
-	2. Otherwise, edgeR is employed for differential loop finding.
+Specifies the differential analysis model.
 
-		2a. --EdgeRModel=0 - directory: *EdgeR_exactTest*
+1. If the parameter --Model=0, DESeq2 is employed. The directory name is *DESeq2*
 
-		2b. --EdgeRModel=1 - directory: *EdgeR_glmQLFTest*
+2. If the parameter --Model=1, edgeR exact test is employed. The directory name is *EdgeR_exactTest*
 
-		2c. --EdgeRModel=2 - directory: *EdgeR_glmTreatQL*
+3. If the parameter --Model=2, edgeR GLM with likelihood ratio test (LRT) is employed. The directory name is *EdgeR_glmLRT*
 
-		2d. --EdgeRModel=3 - directory: *EdgeR_glmLRT*
+4. If the parameter --Model=3, edgeR GLM with quasi-likelihood F test is employed. The directory name is *EdgeR_glmQLFTest*
 
-		2e. --EdgeRModel=4 - directory: *EdgeR_glmTreat*
+5. If the parameter --Model=4, Wilcoxon rank sum test with edgeR TMM normalized counts is employed. The directory name is *Wilcox_rank_sum*
 
-	**Note** The --EdgeRModel=0 setting is the default. --EdgeRModel 1 to 4 values are only applicable when both input categories have multiple replicates.
 
-${\color{brown}FDRTYPE}$: Denotes the FDR (q-value) derivation method.
 
-	1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
+$${\color{brown}FDRTYPE}$$: 
 
-	2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
+Denotes the FDR (q-value) derivation method.
+
+1. DiffLoop_BH_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the conventional BH correction is used to determine FDR. Here {DIFFFDRTHR} is the FDR threshold for differential loops (see the parameter --DiffFDRThr) and {LFCTHR} is the corresponding log fold change threshold (see the parameter --LFCThr).
+
+2. DiffLoop_IHW_FDR_{DIFFFDRTHR}_LOG2FC_{LFCTHR}: Directory storing outputs when the [IHW  correction](https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html) is used to determine FDR.
 
 **Note:**
 
@@ -213,4 +259,6 @@ For any queries, please e-mail to the authors.
 Sourya Bhattacharyya (sourya@lji.org)
 
 Daniela Salgado Figueroa (dsfigueroa@lji.org)
+
+Ferhat Ay (ferhatay@lji.org)
 
