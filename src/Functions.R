@@ -1229,16 +1229,16 @@ Categorize_DiffLoops <- function(MainOutDir, InpLoopFile, CategoryList, QVal_Col
 		UpReg_Cat1_File <- gsub(".bed", paste0("_Upreg_", CategoryList[1], '.bed'), InpLoopFile)
 		UpReg_Cat2_File <- gsub(".bed", paste0("_Upreg_", CategoryList[2], '.bed'), InpLoopFile)
 
-		## for edgeR + exactTest model, fold change < 0 means first category is upregulated 
-		## otherwise, for all other edgeR and for DESeq2, fold change > 0 means first category is upregulated 
-		if (DiffLoopModel == 1) {
-			## edgeR with exactTest
-			system(paste0("awk \'((NR==1) || ($(NF-6)>0))\' ", InpLoopFile, " > ", UpReg_Cat2_File))
-			system(paste0("awk \'((NR==1) || ($(NF-6)<0))\' ", InpLoopFile, " > ", UpReg_Cat1_File))			
-		} else {
-			## DESeq2 / edgeR with other GLM models
+		## for DESeq2, fold change > 0 means first category is upregulated 
+		## for edgeR, fold change > 0 means second category is upregulated 
+		if (DiffLoopModel == 0) {
+			## DESeq2
 			system(paste0("awk \'((NR==1) || ($(NF-6)>0))\' ", InpLoopFile, " > ", UpReg_Cat1_File))
-			system(paste0("awk \'((NR==1) || ($(NF-6)<0))\' ", InpLoopFile, " > ", UpReg_Cat2_File))
+			system(paste0("awk \'((NR==1) || ($(NF-6)<0))\' ", InpLoopFile, " > ", UpReg_Cat2_File))		
+		} else {
+			## edgeR
+			system(paste0("awk \'((NR==1) || ($(NF-6)>0))\' ", InpLoopFile, " > ", UpReg_Cat2_File))
+			system(paste0("awk \'((NR==1) || ($(NF-6)<0))\' ", InpLoopFile, " > ", UpReg_Cat1_File))
 		}
 		ConvertLoopsWashU(UpReg_Cat1_File, QVal_ColList)
 		ConvertLoopsWashU(UpReg_Cat2_File, QVal_ColList)
