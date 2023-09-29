@@ -38,7 +38,7 @@ Installation
 
 To execute DiffHiChIP, user needs to install the following environments and packages:
 
-1. R (we have used R version 4.1.0)
+1. R (we recommend using R version 4.3 and the latest Bioconductor so to use the latest versions of DESeq2 and edgeR)
 
 2. Following R libraries need to be installed:
 
