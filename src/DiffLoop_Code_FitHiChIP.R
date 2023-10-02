@@ -389,8 +389,9 @@ sink(textfile)
 ncore <- detectCores()
 cat(sprintf("\n\n ==>>>> Number of cores in the system: %s ", ncore))
 
-# register(MulticoreParam(min(ncore, 4)))
-register(MulticoreParam(ncore))
+## register upto 4 cores
+register(MulticoreParam(min(ncore, 4)))
+# register(MulticoreParam(ncore))
 # register(SerialParam())
 
 # =============== get the bin size of the input loops ===============
@@ -763,7 +764,8 @@ if (opt$Model == 0) {
 			# no distance stratification - process all loops at once 
 			##=============
 			# create count matrix
-			Create_DESeq2_Compatible_Count_Matrix(MasterSheetData, RawCC_ColList, CountDataFile)
+			# Create_DESeq2_Compatible_Count_Matrix(MasterSheetData, RawCC_ColList, CountDataFile)
+			write.table(MasterSheetData[, RawCC_ColList], CountDataFile, row.names=F, col.names=T, quote=F, sep="\t")
 					
 			# add pseudo count to all counts of 0 in the count matrix
 			# this is because, DESEQ2 requires at least one gene whose all elements are non zero
@@ -834,8 +836,11 @@ if (opt$Model == 0) {
 				}
 				# extract master sheet and count data for the current distance
 				MasterSheetData_CurrDist <- MasterSheetData[loopidx, ]
+				
 				# create count matrix
-				Create_DESeq2_Compatible_Count_Matrix(MasterSheetData_CurrDist, RawCC_ColList, CountDataFile_CurrDist)
+				# Create_DESeq2_Compatible_Count_Matrix(MasterSheetData_CurrDist, RawCC_ColList, CountDataFile_CurrDist)
+				write.table(MasterSheetData_CurrDist[, RawCC_ColList], CountDataFile_CurrDist, row.names=F, col.names=T, quote=F, sep="\t")
+
 				CountData <- data.table::fread(CountDataFile_CurrDist, header=T)
 				# add pseudo count to all counts of 0 in the count matrix
 				# this is because, DESEQ2 requires at least one gene whose all elements are non zero

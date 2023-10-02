@@ -763,6 +763,24 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile,
 
 			cat(sprintf("\n ***** Assigned contact count and q-values for the FitHiChIP loop file index: %s for the chromosome : %s ***** \n", i, chrName))
 
+			## remve temporary objects
+			if (exists("InpTempData")) {
+				rm("InpTempData")
+			}
+
+			if (exists("mergeDF")) {
+				rm("mergeDF")
+			}
+
+			if (exists("rawccvec")) {
+				rm("rawccvec")
+			}
+
+			if (exists("qvec")) {
+				rm("qvec")
+			}
+
+
 		}	# end loop FitHiChIP significance files
 
 		#
@@ -823,6 +841,11 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile,
 
 				cat(sprintf("\n ***** Assigned reference ChIP-seq coverage information for the file index: %s for the chromosome : %s ***** \n", i, chrName))
 
+				## remve temporary objects
+				if (exists("ChIPCoverageData")) {
+					rm("ChIPCoverageData")
+				}
+
 			}	# end ChIP coverage file loop
 
 		}	# end ChIP coverage file presence condition
@@ -876,6 +899,31 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile,
 			system(paste("rm", InpTempFitHiChIPLoopFile))
 		}
 
+		## remve temporary objects
+		if (exists("MergedIntTempData")) {
+			rm("MergedIntTempData")
+		}	
+
+		if (exists("AllLoop_BinDF")) {
+			rm("AllLoop_BinDF")
+		}
+
+		if (exists("RawCC_Categ")) {
+			rm("RawCC_Categ")
+		}
+
+		if (exists("QVal_Categ")) {
+			rm("QVal_Categ")
+		}
+
+		if (exists("Seg1_ChIP_Coverage")) {
+			rm("Seg1_ChIP_Coverage")
+		}
+		if (exists("Seg2_ChIP_Coverage")) {
+			rm("Seg2_ChIP_Coverage")
+		}
+
+
 	}) 	# end chromosome index loop
 
 	## finally merge the results to the final output file
@@ -895,40 +943,6 @@ FillFeatureValues <- function(UnionLoopFile, UnionLoopFeatureFile,
 		system(paste("rm", tempchrfile))
 	}
 
-	# ## remve temporary objects
-	# if (exists("MergedIntTempData")) {
-	# 	rm("MergedIntTempData")
-	# }	
-	# if (exists("AllLoop_BinDF")) {
-	# 	rm("AllLoop_BinDF")
-	# }
-	# if (exists("RawCC_Categ")) {
-	# 	rm("RawCC_Categ")
-	# }
-	# if (exists("QVal_Categ")) {
-	# 	rm("QVal_Categ")
-	# }
-	# if (exists("InpTempData")) {
-	# 	rm("InpTempData")
-	# }
-	# if (exists("mergeDF")) {
-	# 	rm("mergeDF")
-	# }
-	# if (exists("rawccvec")) {
-	# 	rm("rawccvec")
-	# }
-	# if (exists("qvec")) {
-	# 	rm("qvec")
-	# }
-	# if (exists("Seg1_ChIP_Coverage")) {
-	# 	rm("Seg1_ChIP_Coverage")
-	# }
-	# if (exists("Seg2_ChIP_Coverage")) {
-	# 	rm("Seg2_ChIP_Coverage")
-	# }
-	# if (exists("ChIPCoverageData")) {
-	# 	rm("ChIPCoverageData")
-	# }
 	gc()	
 
 }	# end function
@@ -1124,6 +1138,12 @@ Perform_DESeq2 <- function(DiffLoopDir, InpTableFile, CountData, SampleInfoFile,
 	}
 	if (exists("FinalDESEQRes")) {
 		rm("FinalDESEQRes")
+	}
+	if (exists("dataDF")) {
+		rm("dataDF")
+	}
+	if (exists("ihwRes")) {
+		rm("ihwRes")
 	}
 	gc()	
 
