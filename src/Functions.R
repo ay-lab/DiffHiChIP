@@ -1417,6 +1417,9 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 		system(paste("rm", EdgeR_ResFile))
 	}
 
+	## boolean flag indicating any error condition
+	ErrorCond <- FALSE
+
 	## extract the counts from the input "CountData_Orig"
 	CountData <- CountData_Orig[, 7:ncol(CountData_Orig)]
 	CountDataColNames <- colnames(CountData)
@@ -1467,6 +1470,7 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 			# by weighted likelihood empirical Bayes
 			y <- estimateDisp(y, design)		
 		}, error=function(cond) {		
+			ErrorCond <- TRUE
 			cat(sprintf("\n\n ****** edgeR model - estimateDisp - error **** \n"))
 		})
 
@@ -1485,7 +1489,8 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 						## we manually supply the dispersion
 						edgeR_model <- exactTest(y, dispersion=bcv^2, pair=c(CategoryList[1], CategoryList[2]))
 					}
-				}, error=function(cond) {		
+				}, error=function(cond) {	
+					ErrorCond <- TRUE	
 					cat(sprintf("\n\n ****** edgeR model - exactTest - error **** \n"))
 				})				
 			}
@@ -1499,7 +1504,8 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 					## we manually supply the dispersion
 					fit_model <- glmQLFit(y, design, dispersion=bcv^2)
 				}
-			}, error=function(cond) {		
+			}, error=function(cond) {	
+				ErrorCond <- TRUE	
 				cat(sprintf("\n\n ****** edgeR model - glmQLFit - error **** \n"))
 			})			
 			## explicitly specify the contrast argument
@@ -1507,7 +1513,8 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 			if (exists("fit_model")) {
 				tryCatch({		
 					edgeR_model <- glmQLFTest(fit_model, contrast=c(1, -1))
-				}, error=function(cond) {		
+				}, error=function(cond) {	
+					ErrorCond <- TRUE	
 					cat(sprintf("\n\n ****** edgeR model - glmQLFTest - error **** \n"))
 				})
 			}
@@ -1521,7 +1528,8 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 					## we manually supply the dispersion
 					fit_model <- glmFit(y, design, dispersion=bcv^2)
 				}
-			}, error=function(cond) {		
+			}, error=function(cond) {	
+				ErrorCond <- TRUE	
 				cat(sprintf("\n\n ****** edgeR model - glmFit - error **** \n"))
 			})			
 			## explicitly specify the contrast argument
@@ -1530,6 +1538,7 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 				tryCatch({	
 					edgeR_model <- glmLRT(fit_model, contrast=c(1, -1))	
 				}, error=function(cond) {		
+					ErrorCond <- TRUE
 					cat(sprintf("\n\n ****** edgeR model - glmLRT - error **** \n"))
 				})
 			}
@@ -1538,12 +1547,12 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 		## get the DE genes 
 		## will be used for MA plot
 		## and also the final results
-		if (exists("edgeR_model")) {	
+		if ((ErrorCond == FALSE) & exists("edgeR_model")) {	
 			edgeR_model_tags <- topTags(edgeR_model)
 		}
 
 		##===== plot statistics
-		if (exists("y") & (ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
+		if ((ErrorCond == FALSE) & exists("y") & (ReplicaCount[1] > 1) & (ReplicaCount[2] > 1)) {
 
 			## commented - sourya
 			if (0) {
@@ -1600,10 +1609,24 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 		# for each of the DE tag finding techniques (qCML or CR methods)
 		# convert the p-values to the corresponding q-values, using BH correction
 		#===============
-		if (exists("edgeR_model")) {	
+		if ((ErrorCond == FALSE) & exists("edgeR_model")) {	
 			QVal <- p.adjust(edgeR_model$table$PValue, method = "BH")
 			EdgeRRes <- cbind.data.frame(edgeR_model$table$logFC, edgeR_model$table$logCPM, edgeR_model$table$PValue, QVal)		
 			colnames(EdgeRRes) <- c('logFC', 'logCPM', 'pvalue', 'FDR')
+		} else {
+			## error condition
+			## need to fill the data
+			## compute logFC and logCPM from the input counts
+			y <- DGEList(counts=CountData, group=Group)
+			y <- calcNormFactors(y, method="TMM")
+			count_norm <- as.data.frame(cpm(y))
+			avglogCPMVal <- edgeR::aveLogCPM(y)
+			conditionsLevel <- levels(Group)
+			dataCon1 <- count_norm[,c(which(Group==conditionsLevel[1]))]
+			dataCon2 <- count_norm[,c(which(Group==conditionsLevel[2]))]
+			logFCVal <- log2((rowMeans(dataCon2) + 1) / (rowMeans(dataCon1) + 1))
+			## fill 1 for both p-value and FDR
+			EdgeRRes <- data.frame(logFC=logFCVal, logCPM=avglogCPMVal, pvalue=rep(1, length(logFCVal)), FDR=rep(1, length(logFCVal)))
 		}
 
 	} else if (Inp_DiffLoopModel == 4) {
@@ -1633,7 +1656,7 @@ Perform_EdgeR <- function(CountData_Orig, DiffLoopDir, InpTableFile, SampleInfoF
 		})
 
 		## as mclapply returns a list, we need to unlist to get the vector of p-values
-		pvalues = unlist(pvalues_list)
+		pvalues <- unlist(pvalues_list)
 
 		time_val3 = Sys.time()
 		cat(sprintf("\n End of Wilcoxon test p-value computation - time elapsed : %s \n", (time_val3 - time_val2)))
