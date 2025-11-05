@@ -250,6 +250,20 @@ User can check this script and edit the parameters (lines 10 - 90) according to 
 
 The output file will be a .json file which can be easily loaded in WashU epigenome browser for visualization.
 
+Citation
+================
+DiffHiChIP is now published at Cell Reports Methods (https://www.cell.com/cell-reports-methods/fulltext/S2667-2375(25)00250-4)
+
+If you are using DiffHiChIP, please cite:
+
+Bhattacharyya et al., DiffHiChIP: Identifying differential chromatin contacts from HiChIP data, Cell Reports Methods (2025), https://doi.org/10.1016/j.crmeth.2025.101214
+
+Data repository
+================
+A stable version of the DiffHiChIP code (as of October 2025) is available on Zenodo: (https://zenodo.org/records/17410330)
+
+Differential loop results for all datasets and DiffHiChIP settings can be accessed via our web server (https://ay-labtools.lji.org/DiffHiChIP/
+) and through the same Zenodo repository.
 
 Queries
 =========
