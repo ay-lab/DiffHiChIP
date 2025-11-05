@@ -260,10 +260,9 @@ Bhattacharyya et al., DiffHiChIP: Identifying differential chromatin contacts fr
 
 Data repository
 ================
-A stable version of the DiffHiChIP code (as of October 2025) is available on Zenodo: (https://zenodo.org/records/17410330)
+A stable version of the DiffHiChIP code (as of October 2025) is available on Zenodo: https://zenodo.org/records/17410330
 
-Differential loop results for all datasets and DiffHiChIP settings can be accessed via our web server (https://ay-labtools.lji.org/DiffHiChIP/
-) and through the same Zenodo repository.
+Differential loop results for all datasets and DiffHiChIP settings can be accessed via our web server (https://ay-lab-tools.lji.org/DiffHiChIP/) and through the same Zenodo repository.
 
 Queries
 =========
