@@ -1,7 +1,7 @@
 DiffHiChIP
 =============
 
-Statistically significant differential loops between two conditions / categories for HiChIP (and other compatible 3C protocols like PLAC-seq, ChIA-PET, or Hi-C) data.
+Framework to detect statistically significant differential loops between two conditions / categories for HiChIP (and other compatible 3C protocols like PLAC-seq, ChIA-PET, or Hi-C) data.
 
 DiffHiChIP is now published at Cell Reports Methods (https://www.cell.com/cell-reports-methods/fulltext/S2667-2375(25)00250-4)
 
