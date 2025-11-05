@@ -3,6 +3,11 @@ DiffHiChIP
 
 Statistically significant differential loops between two conditions / categories for HiChIP (and other compatible 3C protocols like PLAC-seq, ChIA-PET, or Hi-C) data.
 
+DiffHiChIP is now published at Cell Reports Methods (https://www.cell.com/cell-reports-methods/fulltext/S2667-2375(25)00250-4)
+
+If you are using DiffHiChIP, please cite:
+Bhattacharyya et al., DiffHiChIP: Identifying differential chromatin contacts from HiChIP data, Cell Reports Methods (2025), https://doi.org/10.1016/j.crmeth.2025.101214
+
 Authors (and Contacts)
 =======================
 
@@ -249,14 +254,6 @@ Execution of the above mentioned differential analysis script creates lots of di
 User can check this script and edit the parameters (lines 10 - 90) according to the differential analysis scripts and execution paths.
 
 The output file will be a .json file which can be easily loaded in WashU epigenome browser for visualization.
-
-Citation
-================
-DiffHiChIP is now published at Cell Reports Methods (https://www.cell.com/cell-reports-methods/fulltext/S2667-2375(25)00250-4)
-
-If you are using DiffHiChIP, please cite:
-
-Bhattacharyya et al., DiffHiChIP: Identifying differential chromatin contacts from HiChIP data, Cell Reports Methods (2025), https://doi.org/10.1016/j.crmeth.2025.101214
 
 Data repository
 ================
