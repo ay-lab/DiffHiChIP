@@ -6,6 +6,7 @@ Statistically significant differential loops between two conditions / categories
 DiffHiChIP is now published at Cell Reports Methods (https://www.cell.com/cell-reports-methods/fulltext/S2667-2375(25)00250-4)
 
 If you are using DiffHiChIP, please cite:
+
 Bhattacharyya et al., DiffHiChIP: Identifying differential chromatin contacts from HiChIP data, Cell Reports Methods (2025), https://doi.org/10.1016/j.crmeth.2025.101214
 
 Authors (and Contacts)
